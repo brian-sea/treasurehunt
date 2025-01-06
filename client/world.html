@@ -1,0 +1,543 @@
+<html>
+    <head>
+
+        <style type="text/css">
+            * {
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            body.mainBody {
+                width: 100vw;
+                height: 100vh;
+
+                display: flex;
+                flex-direction: column;
+            }
+            section.mapContainer {
+                flex-grow: 1;
+            }
+
+            div.worldMap{
+                --num-rows: 10;
+                --num-cols: 10;
+
+                display: grid;
+                height: 100%;
+
+
+                grid-template-columns: repeat( var(--num-cols), 1fr);
+                grid-template-rows: repeat( var(--num-rows), 1fr);
+            }
+            div.space{
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                background-color: #8daaec;
+                border: 2px solid black;
+            }
+
+            footer {
+                height: 10vh;
+                padding: 0.5rem;
+            }
+            section.base-stats {
+                position: relative;
+                display: flex;
+                height: 100%;
+
+                width: max-content;
+                padding: 0.25rem;
+                padding-bottom: 0;
+
+            }
+            div.wheel{
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items:center;
+                
+                height: 100%;
+                aspect-ratio: 2;
+
+                border: 2px solid black;
+                border-start-end-radius: 200px;
+                border-start-start-radius: 200px;
+                border-block-end: 0;
+
+                overflow: hidden;
+            }
+
+            div.wheel-slice {
+                height: 50%;
+                width: 100%;
+
+                position: relative;
+                background-color: white;
+
+                border: 1px solid black;
+            }
+            div.wheel-slice.forward{
+                height: 65%;
+                border-bottom: 1px solid black;
+            }
+            div.wheel-slice.reverse{
+                border-top: 0;
+                height: 35%;
+            }
+            div.wheel-slice.left{
+                position: absolute;
+                left: 0;
+
+                width: 30%;
+                height: 100%;
+
+                border-right: 1px dashed darkgray;
+                border-bottom: 0;
+            }
+            div.wheel-slice.right{
+                position: absolute;
+                right: 0;
+
+                width: 30%;
+                height: 100%;
+
+                border-left: 1px dashed darkgray;
+                border-bottom: 0;
+            }
+            div.wheel-slice.center {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                
+                aspect-ratio: 2 / 1;
+                width: 33%;
+                height: 66%;
+
+                border: 1px solid black;
+                border-radius: 100%;
+            }
+
+            div.hull-points{
+                --hull-level: 100%;
+                --hull-color: red;
+                --hull-container-color: red;
+
+                position: absolute;
+                top: 0;
+                left:0; 
+
+                height: 100%;
+                width: 50%;
+                padding-left: 0.25rem;
+                border-top-left-radius: 10px;
+
+                font-size: 1.5rem;
+                font-weight: bold;
+
+                background: linear-gradient(to top, var(--hull-color) var(--hull-level), var(--hull-container-color) var(--hull-level) 100%);
+            }
+            div.oxygen {
+                --oxygen-level: 100%;
+                --oxygen-color: blue;
+                --oxygen-container-color: blue;
+
+                position: absolute;
+                display: flex;
+                justify-content: end;
+
+                top: 0;
+                right: 0;
+
+                font-size: 1.5rem;
+                font-weight: bold;
+
+                width: 50%;
+                height: 100%;
+                padding-right: 0.25rem;
+                border-top-right-radius: 10px;
+
+                background: linear-gradient(to top, var(--oxygen-color) var(--oxygen-level), var(--oxygen-container-color) var(--oxygen-level) 100%);
+                z-index: -1;
+            }   
+            
+            /*  Player Theme */
+            svg#player {
+                width: 80%;
+                height: 80%;
+            }
+          
+        </style>
+    </head>
+    <body class="mainBody">
+        <header>
+        </header>
+        <section class="mapContainer">
+        </section>
+        <footer>
+            <section class="base-stats">
+                <div class="hull-points">
+                    100
+                </div>
+                <div class="wheel">
+                    <div class="wheel-slice forward">
+                        <div class="wheel-slice left"></div>
+                        <div class="wheel-slice right"></div>
+                    </div>
+                    <div class="wheel-slice reverse">
+                        <div class="wheel-slice left"></div>
+                        <div class="wheel-slice right"></div>
+                    </div>
+                    <div class="wheel-slice center">
+                    </div>
+                </div>
+                <div class="oxygen">
+                    100
+                </div>
+            </section>
+        </footer>
+
+        <!-- Submerine sprites -->
+        <svg style='display: none;' id='player' xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges">
+            <metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata>
+            <defs>
+
+            <!-- Water Under -->
+            <symbol id="under-down">
+                <path class='hull' stroke="#fbf236" d="M16 12h1M16 13h1M16 14h1M15 18h3M14 19h5M11 20h5M18 20h4" />
+                <path class='glass' stroke="#4b692f" d="M16 15h1M16 16h1M14 18h1M18 18h1M12 19h2M19 19h2M16 20h2" />
+                <path class='motion' stroke="#5f7de4" d="M17 8h1M14 9h1M17 9h1M14 10h1M17 10h1M19 10h1M21 10h1M12 11h1M19 11h1M21 11h1M12 12h1M19 12h1M21 12h1M11 13h1M21 13h1M24 13h1M11 14h1M21 14h1M24 14h1M11 15h1M21 15h1M24 15h1M10 16h1M24 16h1M8 17h1M23 17h1M27 17h1M8 18h1M27 18h1M7 19h1M27 19h1M7 20h1M27 20h1M7 21h1M13 21h1M27 21h1M7 22h1M9 22h1M13 22h1M18 22h1M21 22h1M24 22h1M10 23h1M13 23h1M15 23h1M18 23h1M21 23h1M24 23h1M10 24h1M13 24h1M15 24h1M18 24h1M21 24h1M10 25h1M15 25h1" />
+                <path class='background' stroke="#8daaec" d="M15 8h1M18 8h2M11 9h3M15 9h1M18 9h6M10 10h4M15 10h1M18 10h1M20 10h1M23 10h2M10 11h2M13 11h2M18 11h1M20 11h1M23 11h4M8 12h4M13 12h2M18 12h1M20 12h1M23 12h5M7 13h3M12 13h3M18 13h3M23 13h1M26 13h2M7 14h3M12 14h3M18 14h3M22 14h2M26 14h2M7 15h4M12 15h3M18 15h3M22 15h2M25 15h3M6 16h4M11 16h4M18 16h6M25 16h4M6 17h1M9 17h5M20 17h3M24 17h3M28 17h1M5 18h2M9 18h3M21 18h6M5 19h2M8 19h3M22 19h5M4 20h3M8 20h2M23 20h1M25 20h2M29 20h1M3 21h4M8 21h5M14 21h13M28 21h2M2 22h5M8 22h1M10 22h3M14 22h4M19 22h2M22 22h2M25 22h5M2 23h8M11 23h2M14 23h1M16 23h2M19 23h2M22 23h2M25 23h5M2 24h1M4 24h2M7 24h3M11 24h2M14 24h1M16 24h2M19 24h1M22 24h3M27 24h1M2 25h2M6 25h1M9 25h1M11 25h1M14 25h1M16 25h1M19 25h3M24 25h2M27 25h3" />
+                <path stroke="#ffffff" d="M16 8h1M16 9h1M16 10h1M22 10h1M22 11h1M22 12h1M10 13h1M22 13h1M25 13h1M10 14h1M25 14h1M5 17h1M7 17h1M7 18h1M28 18h1M4 19h1M28 19h1M3 20h1M24 20h1M28 20h1M2 21h1M3 24h1M6 24h1M20 24h1M25 24h2M28 24h2M4 25h2M7 25h2M12 25h2M17 25h2M22 25h2M26 25h1" />
+                <path stroke="#000000" d="M15 11h3M15 12h1M17 12h1M15 13h1M17 13h1M15 14h1M17 14h1M15 15h1M17 15h1M15 16h1M17 16h1M14 17h6M12 18h2M19 18h2M11 19h1M21 19h1M10 20h1M22 20h1" />
+            </symbol>
+            <symbol id="under-down-right">
+                <path class='hull' stroke="#fbf236" d="M17 12h1M17 13h1M17 14h1M17 15h1M13 17h1M13 18h1M15 18h3M13 19h3M18 19h3" />
+                <path class='glass' stroke="#4b692f" d="M18 12h2M17 16h1M18 18h3M21 19h2" />
+                <path class='motion' stroke="#5f7de4" d="M14 5h1M8 6h1M15 6h2M9 7h3M17 7h2M12 8h1M19 8h1M5 9h1M13 9h1M20 9h1M2 10h2M6 10h1M14 10h1M4 11h2M7 11h1M8 12h2M4 13h1M23 13h1M5 14h1M11 14h1M24 14h1M6 15h1M12 15h1M25 15h1M7 16h1M12 16h1M26 16h2M8 17h1M6 18h1M9 18h1M6 19h1M9 19h1M25 19h1M4 20h1M7 20h1M10 20h1M26 20h1M4 21h1M8 21h1M14 21h1M21 21h1M27 21h1M5 22h1M9 22h1M15 22h2M22 22h1M28 22h1M6 23h1M9 23h1M17 23h1M23 23h1" />
+                <path class='background' stroke="#8daaec" d="M7 4h8M5 5h9M15 5h4M4 6h4M9 6h6M18 6h3M3 7h6M13 7h4M20 7h3M2 8h10M14 8h5M21 8h3M2 9h3M6 9h7M14 9h1M16 9h4M21 9h4M4 10h2M7 10h7M15 10h11M2 11h2M6 11h1M8 11h8M21 11h5M2 12h6M10 12h6M21 12h6M2 13h2M6 13h10M21 13h2M25 13h3M3 14h2M7 14h4M12 14h4M19 14h5M26 14h3M3 15h3M8 15h4M13 15h3M19 15h6M26 15h3M4 16h3M8 16h4M15 16h1M19 16h7M28 16h1M3 17h5M9 17h4M21 17h8M3 18h3M7 18h2M10 18h3M23 18h6M3 19h3M7 19h2M10 19h3M24 19h1M27 19h4M3 20h1M5 20h2M8 20h2M11 20h15M28 20h3M5 21h3M9 21h5M16 21h5M23 21h4M28 21h2M6 22h3M10 22h5M18 22h4M24 22h4M29 22h2M5 23h1M7 23h2M10 23h7M18 23h5M24 23h6M7 24h3M11 24h4M16 24h4M21 24h4M27 24h1M19 25h3M24 25h1" />
+                <path stroke="#ffffff" d="M17 6h1M12 7h1M19 7h1M13 8h1M20 8h1M15 9h1M5 13h1M24 13h1M6 14h1M25 14h1M7 15h1M2 16h2M2 17h1M2 18h1M29 18h1M2 19h1M26 19h1M27 20h1M15 21h1M22 21h1M30 21h1M17 22h1M23 22h1M6 24h1M10 24h1M15 24h1M20 24h1M25 24h2M17 25h2M22 25h2" />
+                <path stroke="#000000" d="M16 11h5M16 12h1M20 12h1M16 13h1M18 13h3M16 14h1M18 14h1M16 15h1M18 15h1M13 16h2M16 16h1M18 16h1M14 17h7M14 18h1M21 18h2M16 19h2M23 19h1" />
+            </symbol>
+            <symbol id="under-down-left">
+                <path class='hull' stroke="#fbf236" d="M15 12h1M15 13h1M15 14h1M15 15h1M15 18h3M12 19h3M17 19h2" />
+                <path class='glass' stroke="#4b692f" d="M13 12h2M15 16h1M12 18h3M10 19h2" />
+                <path class='motion' stroke="#5f7de4" d="M23 2h1M26 2h1M25 3h1M22 4h1M28 4h2M20 5h2M24 5h1M27 5h1M19 6h1M24 6h1M27 6h1M17 7h2M23 7h1M16 8h1M22 8h1M26 8h1M15 9h1M21 9h1M26 9h1M14 10h1M21 10h1M25 10h1M20 11h1M25 11h1M19 12h1M24 12h1M10 13h2M18 13h1M24 13h1M26 13h1M9 14h1M20 14h1M23 14h1M25 14h1M19 15h1M22 15h1M24 15h1M7 16h1M10 16h1M21 16h1M27 16h2M6 17h1M9 17h1M25 17h2M28 17h1M5 18h1M8 18h1M20 18h1M23 18h2M27 18h2M4 19h1M7 19h1M20 19h1M25 19h1M27 19h1M4 20h1M6 20h1M10 20h1M12 20h2M15 20h2M19 20h1M26 20h1M11 21h2M14 21h2M18 21h1M21 21h2M24 21h2M3 22h1M10 22h2M13 22h2M18 22h1M23 22h2" />
+                <path class='background' stroke="#8daaec" d="M21 2h2M24 2h2M27 2h3M20 3h5M26 3h5M18 4h4M23 4h4M30 4h1M17 5h3M22 5h2M25 5h2M28 5h2M16 6h3M21 6h3M25 6h2M28 6h2M14 7h3M20 7h3M24 7h6M13 8h3M18 8h4M23 8h3M27 8h2M12 9h2M16 9h5M23 9h3M27 9h1M11 10h3M15 10h6M23 10h2M27 10h1M9 11h3M17 11h3M22 11h3M26 11h2M9 12h3M17 12h2M21 12h3M26 12h2M8 13h2M17 13h1M19 13h5M25 13h1M27 13h1M7 14h2M10 14h4M17 14h3M21 14h2M27 14h1M5 15h9M17 15h2M20 15h2M23 15h1M26 15h2M4 16h3M8 16h2M11 16h3M17 16h4M22 16h5M3 17h2M7 17h1M10 17h2M19 17h6M27 17h1M3 18h1M6 18h1M9 18h1M19 18h1M21 18h2M25 18h2M3 19h1M5 19h2M8 19h2M19 19h1M21 19h2M24 19h1M26 19h1M28 19h1M3 20h1M5 20h1M7 20h2M11 20h1M14 20h1M17 20h2M21 20h1M24 20h2M27 20h2M3 21h6M10 21h1M13 21h1M16 21h2M20 21h1M23 21h1M26 21h3M4 22h4M9 22h1M12 22h1M15 22h3M19 22h4M25 22h4M3 23h25M4 24h1M7 24h4M12 24h4M17 24h4M22 24h3M26 24h1M4 25h1M6 25h2M10 25h3M15 25h3M20 25h3M25 25h1" />
+                <path stroke="#ffffff" d="M27 4h1M20 6h1M19 7h1M17 8h1M14 9h1M22 9h1M22 10h1M26 10h1M21 11h1M20 12h1M25 12h1M24 14h1M26 14h1M25 15h1M5 17h1M8 17h1M4 18h1M7 18h1M23 19h1M9 20h1M20 20h1M22 20h2M9 21h1M19 21h1M8 22h1M3 24h1M5 24h2M11 24h1M16 24h1M21 24h1M25 24h1M5 25h1M8 25h2M13 25h2M18 25h2M23 25h2" />
+                <path stroke="#000000" d="M12 11h5M12 12h1M16 12h1M12 13h3M16 13h1M14 14h1M16 14h1M14 15h1M16 15h1M14 16h1M16 16h1M12 17h7M10 18h2M18 18h1M15 19h2" />
+              </symbol>
+            <symbol id="under-left">
+                <path stroke="#000000" d="M11 13h4M11 14h1M15 14h1M11 15h3M16 15h1M14 16h1M16 16h1M14 17h1M16 17h1M14 18h1M16 18h1M13 19h5M12 20h1M18 20h2M12 21h1M20 21h2" />
+                <path class='hull' stroke="#fbf236" d="M12 14h2M14 15h1M15 16h1M15 17h1M15 18h1M15 20h3M16 21h4" />
+                <path class='glass' stroke="#4b692f" d="M14 14h1M15 15h1M13 20h2M13 21h3" />
+                <path class='motion' stroke="#5f7de4" d="M1 19h3M9 19h2M25 19h1M27 19h2M30 19h1M2 20h1M4 20h2M7 20h1M23 20h2M1 21h1M24 21h1M26 21h1M0 22h1M3 22h2M6 22h3M13 22h4M23 22h1M12 23h1M19 23h5" />
+                <path class='background' stroke="#8daaec" d="M4 19h5M11 19h2M18 19h7M31 19h1M0 20h2M8 20h4M20 20h3M25 20h7M0 21h1M2 21h10M22 21h2M27 21h4M1 22h2M10 22h3M17 22h6M24 22h8M0 23h12M13 23h6M24 23h4M31 23h1M0 24h2M4 24h2M8 24h2M13 24h1M17 24h2M22 24h1M25 24h2" />
+                <path stroke="#ffffff" d="M26 19h1M29 19h1M3 20h1M6 20h1M25 21h1M31 21h1M5 22h1M9 22h1M28 23h3M2 24h2M6 24h2M10 24h3M14 24h3M19 24h3M23 24h2M27 24h1" />
+              </symbol>
+              <symbol id="under-right">
+                <path stroke="#000000" d="M17 13h4M16 14h1M20 14h1M15 15h1M18 15h3M15 16h1M17 16h1M15 17h1M17 17h1M15 18h1M17 18h1M14 19h5M12 20h2M19 20h1M10 21h2M19 21h1" />
+                <path class='hull' stroke="#fbf236" d="M18 14h2M17 15h1M16 16h1M16 17h1M16 18h1M14 20h3M12 21h4" />
+                <path class='glass' stroke="#4b692f" d="M17 14h1M16 15h1M17 20h2M16 21h3" />
+                <path class='motion' stroke="#5f7de4" d="M1 17h3M7 17h6M20 17h2M25 17h5M8 19h3M23 19h4M2 20h3M28 20h2M4 21h4M22 21h4M26 22h3M5 23h4M12 23h4M20 23h3" />
+                <path class='background' stroke="#8daaec" d="M0 16h1M2 16h6M11 16h4M18 16h8M30 16h2M0 17h1M4 17h3M13 17h2M18 17h2M22 17h3M30 17h2M0 18h8M9 18h6M18 18h5M27 18h5M0 19h3M5 19h3M11 19h3M19 19h4M27 19h5M0 20h2M5 20h7M20 20h8M30 20h2M1 21h3M8 21h2M20 21h2M26 21h6M0 22h26M29 22h3M0 23h1M4 23h1M9 23h3M16 23h4M23 23h9M5 24h2M9 24h1M13 24h2M18 24h1M22 24h2M26 24h2M30 24h2" />
+                <path stroke="#ffffff" d="M1 16h1M8 16h3M26 16h4M8 18h1M23 18h4M3 19h2M0 21h1M1 23h3M4 24h1M7 24h2M10 24h3M15 24h3M19 24h3M24 24h2M28 24h2" />
+              </symbol>
+              <symbol id="under-up">
+                <path class='hull' stroke="#fbf236" d="M16 13h1M16 14h1M16 15h1M15 19h3M14 20h5M11 21h11M12 22h3M18 22h3" />
+                <path class='glass' stroke="#4b692f" d="M16 16h1M16 17h1M14 19h1M18 19h1M12 20h2M19 20h2" />
+                <path class='motion' stroke="#5f7de4" d="M18 8h1M15 9h1M17 9h1M15 10h1M17 10h1M21 10h1M23 10h1M12 11h1M21 11h1M25 11h1M9 12h1M12 12h1M20 12h1M23 12h1M9 13h1M12 13h1M20 13h1M23 13h1M25 13h1M9 14h1M11 14h1M20 14h1M22 14h1M25 14h1M9 15h1M11 15h1M20 15h1M23 15h1M25 15h1M9 16h1M11 16h1M20 16h1M23 16h1M26 16h1M21 17h1M23 17h1M26 17h1M27 20h1M9 21h1M24 21h1M26 21h1M8 22h1M24 22h1M26 22h1M8 23h1M23 23h1M13 24h1M15 24h1M18 24h1M11 25h1M13 25h1M16 25h1M19 25h1M11 26h1M13 26h1M16 26h1M19 26h1M11 27h1M16 27h1M19 27h1M16 28h1M18 28h1" />
+                <path class='background' stroke="#8daaec" d="M16 7h4M12 8h6M19 8h2M10 9h5M16 9h1M18 9h6M9 10h6M16 10h1M18 10h2M22 10h1M24 10h3M8 11h3M13 11h7M22 11h1M24 11h1M26 11h1M8 12h1M10 12h1M13 12h2M18 12h2M21 12h2M24 12h1M26 12h1M8 13h1M10 13h1M13 13h2M18 13h2M21 13h2M24 13h1M8 14h1M10 14h1M12 14h3M18 14h2M21 14h1M24 14h1M8 15h1M10 15h1M12 15h3M18 15h2M21 15h2M24 15h1M26 15h1M8 16h1M10 16h1M12 16h3M18 16h2M21 16h2M24 16h2M27 16h1M7 17h8M18 17h3M22 17h1M24 17h2M27 17h1M7 18h7M19 18h9M7 19h5M21 19h7M7 20h3M23 20h4M7 21h2M23 21h1M25 21h1M27 21h1M6 22h2M9 22h1M23 22h1M25 22h1M27 22h1M6 23h2M9 23h14M24 23h3M7 24h3M11 24h2M14 24h1M16 24h2M19 24h1M21 24h4M6 25h1M9 25h2M14 25h2M20 25h2M24 25h2M10 26h1M12 26h1M14 26h2M17 26h2M20 26h5M10 27h1M12 27h4M17 27h2M20 27h2M11 28h5M17 28h1M19 28h3M14 29h6" />
+                <path stroke="#ffffff" d="M20 10h1M11 11h1M20 11h1M23 11h1M11 12h1M25 12h1M11 13h1M26 13h1M23 14h1M26 14h1M6 24h1M10 24h1M20 24h1M25 24h2M7 25h2M12 25h1M17 25h2M22 25h2" />
+                <path stroke="#000000" d="M15 12h3M15 13h1M17 13h1M15 14h1M17 14h1M15 15h1M17 15h1M15 16h1M17 16h1M15 17h1M17 17h1M14 18h5M12 19h2M19 19h2M10 20h2M21 20h2M10 21h1M22 21h1M10 22h2M15 22h3M21 22h2" />
+              </symbol>
+              <symbol id="under-up-right">
+                <path class='hull' stroke="#fbf236" d="M15 12h1M15 13h1M15 14h1M15 15h1M13 16h1M17 16h1M12 17h6M12 18h8M17 19h1M19 19h1" />
+                <path class='glass' stroke="#4b692f" d="M13 12h2M17 14h2M19 15h1M15 16h1M19 16h1M19 17h1M15 19h1" />                
+                <path class='motion' stroke="#5f7de4" d="M19 4h1M18 5h1M22 5h1M17 6h1M22 6h1M16 7h1M21 7h1M25 7h1M15 8h1M20 8h1M24 8h1M13 9h2M19 9h1M23 9h1M18 10h1M22 10h1M20 11h2M25 11h1M10 12h1M24 12h1M10 13h1M24 13h1M5 14h2M13 14h1M23 14h1M9 15h1M12 15h1M22 15h1M25 15h1M5 16h1M11 16h1M22 17h1M7 18h1M10 18h1M21 18h1M6 19h2M23 19h1M3 20h4M12 22h1M7 23h1M11 23h1M17 23h1M3 24h4M10 24h1M16 24h1M9 25h1M15 25h1M6 26h3M14 26h1M13 27h1" />
+                <path class='background' stroke="#8daaec" d="M22 2h3M18 3h9M16 4h3M20 4h8M14 5h4M19 5h2M23 5h6M13 6h4M18 6h3M23 6h5M12 7h4M17 7h3M22 7h2M26 7h2M11 8h4M16 8h3M21 8h2M25 8h3M10 9h3M15 9h4M20 9h2M24 9h3M9 10h9M19 10h3M23 10h3M8 11h4M17 11h3M22 11h2M6 12h3M11 12h1M17 12h7M25 12h1M5 13h5M11 13h1M18 13h5M25 13h1M4 14h1M7 14h4M12 14h1M19 14h4M24 14h2M4 15h3M8 15h1M10 15h2M20 15h1M23 15h2M4 16h1M6 16h5M20 16h6M4 17h7M20 17h2M23 17h3M4 18h3M8 18h2M20 18h1M22 18h4M3 19h2M9 19h1M20 19h3M24 19h1M2 20h1M7 20h17M2 21h22M2 22h10M13 22h10M2 23h4M8 23h2M12 23h4M18 23h5M7 24h2M11 24h4M17 24h5M2 25h3M6 25h2M10 25h3M16 25h5M3 26h3M9 26h5M15 26h5M4 27h9M14 27h4M5 28h9" />
+                <path stroke="#ffffff" d="M21 5h1M21 6h1M20 7h1M24 7h1M19 8h1M23 8h1M22 9h1M24 11h1M9 12h1M23 13h1M11 14h1M7 15h1M21 15h1M5 19h1M8 19h1M6 23h1M10 23h1M16 23h1M2 24h1M9 24h1M15 24h1M5 25h1M8 25h1M13 25h2" />
+                <path stroke="#000000" d="M12 11h5M12 12h1M16 12h1M12 13h3M16 13h2M14 14h1M16 14h1M13 15h2M16 15h3M12 16h1M14 16h1M16 16h1M18 16h1M11 17h1M18 17h1M11 18h1M10 19h5M16 19h1M18 19h1" />
+            </symbol>
+              <symbol id="under-up-left">
+                <path class='hull' stroke="#fbf236" d="M16 14h1M12 15h2M16 15h1M12 16h1M16 16h1M16 17h1M14 18h1M18 18h1M14 19h6M12 20h8M12 21h1M14 21h1" />
+                <path class='glass' stroke="#4b692f" d="M17 14h2M13 16h2M12 17h1M12 18h1M16 18h1M12 19h1M16 21h1" />
+                <path class='motion' stroke="#5f7de4" d="M9 7h1M10 8h1M11 9h1M9 10h1M12 10h1M15 10h1M6 11h1M10 11h1M13 11h1M16 11h1M7 12h1M11 12h1M13 12h1M17 12h1M3 13h1M8 13h1M4 14h1M9 14h1M5 15h1M6 16h1M20 17h1M6 18h1M9 18h1M21 18h1M7 19h1M10 19h1M22 19h1M8 20h1M24 20h1M9 21h1M25 21h1M27 21h1M10 22h1M23 22h1M28 22h1M12 23h1M14 23h1M18 23h1M23 23h1M15 24h1M19 24h1M24 24h1M28 24h1M16 25h1M20 25h1M25 25h1M21 26h2M26 26h2M23 27h1" />
+                <path class='background' stroke="#8daaec" d="M6 5h6M6 6h7M5 7h4M10 7h4M5 8h5M12 8h3M4 9h7M13 9h3M4 10h2M7 10h2M10 10h2M13 10h2M16 10h1M3 11h3M8 11h2M11 11h2M14 11h2M17 11h1M2 12h5M8 12h3M12 12h1M14 12h3M18 12h2M2 13h1M5 13h3M9 13h6M20 13h1M2 14h2M6 14h3M10 14h2M14 14h1M20 14h1M3 15h2M7 15h4M20 15h2M3 16h3M8 16h3M18 16h4M3 17h8M19 17h1M21 17h2M4 18h2M7 18h2M10 18h1M20 18h1M23 18h2M4 19h3M8 19h2M21 19h1M23 19h4M6 20h2M9 20h2M21 20h3M26 20h2M7 21h2M10 21h1M22 21h3M28 21h1M8 22h2M11 22h12M24 22h3M9 23h3M15 23h3M20 23h3M25 23h3M29 23h1M10 24h4M16 24h3M21 24h3M26 24h2M29 24h1M11 25h4M17 25h3M22 25h3M27 25h3M17 26h4M23 26h3M28 26h1M18 27h5M24 27h4M19 28h8" />
+                <path stroke="#ffffff" d="M11 8h1M12 9h1M6 10h1M7 11h1M4 13h1M5 14h1M6 15h1M7 16h1M22 18h1M25 20h1M26 21h1M27 22h1M13 23h1M19 23h1M24 23h1M28 23h1M14 24h1M20 24h1M25 24h1M15 25h1M21 25h1M26 25h1" />
+                <path stroke="#000000" d="M15 13h5M12 14h2M15 14h1M19 14h1M11 15h1M14 15h2M17 15h3M11 16h1M15 16h1M17 16h1M11 17h1M13 17h3M17 17h2M11 18h1M13 18h1M15 18h1M17 18h1M19 18h1M11 19h1M13 19h1M20 19h1M11 20h1M20 20h1M11 21h1M13 21h1M15 21h1M17 21h5" />
+              </symbol>
+
+
+            <!-- Water Surface -->
+            <symbol id="water-down">
+                <path stroke="#000000" d="M15 2h3M15 3h1M17 3h1M15 4h1M17 4h1M15 5h1M17 5h1M15 6h1M17 6h1M15 7h1M17 7h1M14 8h6M12 9h2M19 9h2M11 10h1M21 10h1M10 11h1M22 11h1M9 12h1M23 12h1M8 13h1M24 13h1M7 14h1M25 14h1M6 15h1M26 15h1M6 16h1M26 16h1M6 17h1M26 17h1M6 18h1M26 18h1M5 19h1M7 19h1M25 19h1M27 19h1M5 20h1M8 20h17M27 20h1M4 21h1M28 21h1" />
+                <path class='hull' stroke="#fbf236" d="M16 3h1M16 4h1M16 5h1M15 9h3M14 10h5M11 11h5M18 11h4M10 12h1M13 12h2M19 12h1M22 12h1M6 20h1M26 20h1M6 21h9M18 21h9" />
+                <path class='accent' stroke="#4b692f" d="M16 6h1M16 7h1M14 9h1M18 9h1M12 10h2M19 10h2M16 11h2M11 12h2M15 12h4M20 12h2M6 19h1M26 19h1M7 20h1M25 20h1M5 21h1M15 21h3M27 21h1" />
+                <path class='background' stroke="#5f7de4" d="M5 17h1M27 17h1M5 18h1M27 18h1M4 19h1M28 19h1M3 20h2M28 20h2M2 21h2M29 21h2M2 22h29M5 23h23" />
+                <path stroke="#cbdbfc" d="M9 13h15M8 14h17M7 15h1M10 15h13M25 15h1M7 16h1M11 16h11M25 16h1M7 17h1M12 17h9M25 17h1M7 18h1M14 18h5M25 18h1M8 19h2M23 19h2" />
+                <path stroke="#5fcde4" d="M8 15h2M23 15h2M8 16h3M22 16h3M8 17h4M21 17h4M8 18h6M19 18h6M10 19h13" />
+                <path stroke="#8daaec" d="M2 23h3M28 23h2M2 24h1M4 24h2M7 24h3M11 24h4M16 24h4M21 24h4M27 24h1M30 24h1M2 25h2M6 25h1M9 25h3M14 25h3M19 25h3M24 25h2M27 25h3" />
+                <path stroke="#ffffff" d="M30 23h1M3 24h1M6 24h1M10 24h1M15 24h1M20 24h1M25 24h2M28 24h2M4 25h2M7 25h2M12 25h2M17 25h2M22 25h2M26 25h1M30 25h1" />
+            </symbol>
+            <symbol id="water-down-right">
+                <path stroke="#000000" d="M3 1h2M2 2h2M5 2h1M2 3h1M5 3h1M15 3h5M2 4h1M5 4h3M15 4h1M19 4h1M2 5h2M7 5h2M15 5h1M17 5h3M3 6h1M8 6h2M15 6h1M17 6h1M2 7h2M6 7h1M9 7h3M15 7h1M17 7h1M2 8h1M5 8h1M12 8h2M15 8h1M17 8h1M2 9h2M6 9h2M13 9h7M3 10h1M13 10h1M20 10h2M4 11h1M15 11h2M22 11h1M4 12h1M17 12h5M23 12h1M4 13h1M13 13h1M18 13h4M24 13h1M4 14h1M12 14h1M25 14h1M12 15h1M26 15h1M12 16h1M27 16h1M12 17h1M27 17h1M12 18h1M27 18h1M12 19h1M26 19h3M12 20h1M26 20h1M28 20h1M12 21h14M28 21h1" />
+                <path class='hull' stroke="#fbf236" d="M4 3h1M4 4h1M16 4h1M4 5h3M16 5h1M4 6h4M16 6h1M4 7h2M7 7h2M16 7h1M3 8h2M6 8h6M4 9h2M8 9h5M4 10h9M14 10h3M5 11h3M9 11h6M17 11h3M5 12h2M10 12h7M22 12h1M5 13h1M11 13h2M14 13h4M22 13h2M5 14h1M11 14h1M5 15h1M11 15h1M5 16h2M10 16h2M5 17h3M9 17h3M6 18h6M7 19h5M8 20h4M27 20h1M9 21h3M26 21h2" />
+                <path class='accent' stroke="#4b692f" d="M4 2h1M3 3h1M3 4h1M17 4h2M16 8h1M17 10h3M8 11h1M20 11h2M7 12h1M9 12h1M6 13h1M10 13h1M6 14h1M10 14h1M6 15h1M10 15h1M7 16h1M9 16h1M8 17h1" />
+                <path class='background' stroke="#5f7de4" d="M3 15h2M4 16h1M4 17h1M4 18h2M28 18h1M5 19h2M29 19h1M6 20h2M29 20h1M6 21h3M29 21h1M7 22h22" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M8 12h1M7 13h2M13 14h12M13 15h13M13 16h13M14 17h9M24 17h1M15 18h7M16 19h4" />
+                <path class='glass' stroke="#5fcde4" d="M9 13h1M7 14h3M7 15h3M8 16h1M26 16h1M13 17h1M23 17h1M25 17h2M13 18h2M22 18h5M13 19h3M20 19h6M13 20h13" />
+                <path stroke="#8daaec" d="M27 15h1M3 16h1M28 16h1M3 17h1M28 17h1M3 18h1M3 19h2M30 19h1M3 20h3M30 20h1M2 21h4M3 22h4M29 22h2M3 23h27M2 24h1M4 24h2M7 24h3M11 24h4M16 24h4M21 24h4M27 24h1M30 24h1M2 25h2M6 25h1M9 25h3M14 25h3M19 25h3M24 25h2M27 25h3" />
+                <path stroke="#ffffff" d="M29 18h1M2 19h1M2 20h1M30 21h1M2 22h1M2 23h1M30 23h1M3 24h1M6 24h1M10 24h1M15 24h1M20 24h1M25 24h2M28 24h2M4 25h2M7 25h2M12 25h2M17 25h2M22 25h2M26 25h1M30 25h1" />
+            </symbol>
+            <symbol id="water-down-left">
+                <path stroke="#000000" d="M27 1h2M26 2h1M28 2h2M12 3h5M26 3h1M29 3h1M12 4h1M16 4h1M24 4h3M29 4h1M12 5h3M16 5h1M23 5h2M28 5h2M14 6h1M16 6h1M22 6h2M28 6h1M14 7h1M16 7h1M20 7h3M25 7h1M28 7h2M14 8h1M16 8h1M18 8h2M26 8h1M29 8h1M12 9h7M24 9h2M28 9h2M10 10h2M18 10h1M28 10h1M9 11h1M15 11h2M27 11h1M8 12h1M10 12h5M27 12h1M7 13h1M10 13h4M18 13h1M27 13h1M6 14h1M19 14h1M27 14h1M5 15h1M19 15h1M27 15h1M19 16h1M4 17h1M19 17h1M4 18h1M19 18h1M4 19h2M19 19h1M5 20h1M19 20h1M6 21h14" />
+                <path class='hull' stroke="#fbf236" d="M27 3h1M15 4h1M27 4h1M15 5h1M25 5h3M15 6h1M24 6h4M15 7h1M23 7h2M26 7h2M20 8h6M27 8h2M19 9h5M26 9h2M15 10h3M19 10h9M12 11h3M17 11h6M24 11h3M9 12h1M15 12h7M25 12h2M8 13h2M14 13h4M19 13h2M26 13h1M20 14h1M26 14h1M20 15h1M26 15h1M20 16h2M25 16h2M20 17h3M24 17h3M20 18h6M20 19h6M4 20h1M20 20h5M4 21h2M20 21h3" />
+                <path class='accent' stroke="#4b692f" d="M27 2h1M28 3h1M13 4h2M28 4h1M15 8h1M12 10h3M10 11h2M23 11h1M22 12h1M24 12h1M21 13h1M25 13h1M21 14h1M25 14h1M21 15h1M25 15h1M22 16h1M24 16h1M27 16h1M23 17h1M27 17h1M26 18h1M26 19h1" />
+                <path class='background' stroke="#5f7de4" d="M4 16h1M28 16h1M3 17h1M28 17h1M3 18h1M27 18h2M3 19h1M27 19h1M3 20h1M25 20h2M3 21h1M23 21h3M3 22h22" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M23 12h1M23 13h2M7 14h12M6 15h13M6 16h13M7 17h1M9 17h9M10 18h7M12 19h4" />
+                <path class='glass' stroke="#5fcde4" d="M22 13h1M22 14h3M22 15h3M5 16h1M23 16h1M5 17h2M8 17h1M18 17h1M5 18h5M17 18h2M6 19h6M16 19h3M6 20h13" />
+                <path stroke="#ffffff" d="M2 16h2M1 18h1M1 19h1M1 21h1M29 22h1M1 23h1M29 23h1M2 24h2M5 24h2M11 24h1M16 24h1M21 24h1M25 24h1M28 24h1M1 25h1M5 25h1M8 25h2M13 25h2M18 25h2M23 25h2M26 25h2" />
+                <path stroke="#8daaec" d="M1 17h2M29 17h1M2 18h1M29 18h1M2 19h1M28 19h2M1 20h2M27 20h3M2 21h1M26 21h4M1 22h2M25 22h4M2 23h27M1 24h1M4 24h1M7 24h4M12 24h4M17 24h4M22 24h3M26 24h2M29 24h1M2 25h3M6 25h2M10 25h3M15 25h3M20 25h3M25 25h1M28 25h2" />
+              </symbol>
+            <symbol id="water-left">
+                <path stroke="#000000" d="M11 2h4M11 3h1M15 3h1M11 4h3M16 4h1M14 5h1M16 5h1M14 6h1M16 6h1M14 7h1M16 7h1M13 8h5M12 9h1M18 9h2M12 10h1M20 10h2M12 11h1M21 11h1M5 12h19M29 12h2M4 13h2M8 13h1M24 13h1M28 13h1M31 13h1M3 14h2M8 14h1M24 14h1M28 14h1M31 14h1M3 15h1M8 15h1M13 15h3M25 15h1M27 15h1M31 15h1M2 16h1M8 16h1M12 16h1M16 16h1M25 16h1M27 16h1M31 16h1M2 17h1M8 17h1M11 17h1M17 17h1M26 17h1M30 17h1M1 18h1M8 18h1M11 18h1M17 18h1M21 18h4M26 18h1M30 18h1M1 19h1M8 19h1M11 19h1M17 19h1M20 19h1M25 19h1M27 19h1M29 19h1M0 20h1M2 20h6M11 20h1M17 20h1M20 20h1M25 20h1M27 20h1M29 20h1M0 21h1M12 21h1M16 21h1M21 21h4M13 22h3" />
+                <path class='hull' stroke="#fbf236" d="M12 3h2M14 4h1M15 5h1M15 6h1M15 7h1M15 9h3M16 10h4M17 11h4M17 13h7M29 13h1M9 14h15M29 14h1M9 15h4M16 15h9M28 15h2M9 16h3M17 16h8M28 16h2M9 17h2M18 17h8M27 17h2M9 18h2M18 18h3M25 18h1M27 18h2M9 19h2M18 19h2M22 19h3M26 19h1M28 19h1M1 20h1M8 20h3M18 20h2M21 20h1M26 20h1M28 20h1M1 21h11M17 21h3M25 21h2M3 22h10M16 22h5M24 22h1" />
+                <path class='accent' stroke="#4b692f" d="M14 3h1M15 4h1M13 9h2M13 10h3M13 11h4M9 13h8M30 13h1M30 14h1M30 15h1M13 16h3M30 16h1M12 17h1M16 17h1M29 17h1M12 18h1M16 18h1M29 18h1M12 19h1M16 19h1M21 19h1M12 20h1M16 20h1M22 20h3M13 21h3M20 21h1M21 22h3" />
+                <path class='background' stroke="#5f7de4" d="M30 20h1M28 21h3M0 22h3M25 22h6M1 23h26" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M6 13h2M5 14h3M4 15h2M3 16h2M3 17h2M13 17h1M2 18h3M13 18h1M2 19h2" />
+                <path class='glass' stroke="#5fcde4" d="M6 15h2M5 16h3M5 17h3M14 17h2M5 18h3M14 18h2M4 19h4M13 19h3M13 20h3" />
+                <path stroke="#8daaec" d="M30 19h2M31 20h1M31 22h1M0 23h1M27 23h1M31 23h1M0 24h2M4 24h2M8 24h2M13 24h1M17 24h2M22 24h1M25 24h2" />
+                <path stroke="#3270dc" d="M27 21h1" />
+                <path stroke="#ffffff" d="M31 21h1M28 23h3M2 24h2M6 24h2M10 24h3M14 24h3M19 24h3M23 24h2M27 24h1" />
+              </symbol>
+              <symbol id="water-right">
+                <path stroke="#000000" d="M17 2h4M16 3h1M20 3h1M15 4h1M18 4h3M15 5h1M17 5h1M15 6h1M17 6h1M15 7h1M17 7h1M14 8h5M12 9h2M19 9h1M10 10h2M19 10h1M10 11h1M19 11h1M1 12h2M8 12h19M0 13h1M3 13h1M7 13h1M23 13h1M26 13h2M0 14h1M3 14h1M7 14h1M23 14h1M27 14h2M0 15h1M4 15h1M6 15h1M16 15h3M23 15h1M28 15h1M0 16h1M4 16h1M6 16h1M15 16h1M19 16h1M23 16h1M29 16h1M1 17h1M5 17h1M14 17h1M20 17h1M23 17h1M29 17h1M1 18h1M5 18h1M7 18h4M14 18h1M20 18h1M23 18h1M30 18h1M2 19h1M4 19h1M6 19h1M11 19h1M14 19h1M20 19h1M23 19h1M30 19h1M2 20h1M4 20h1M6 20h1M11 20h1M14 20h1M20 20h1M24 20h6M31 20h1M7 21h4M15 21h1M19 21h1M31 21h1M16 22h3" />
+                <path class='hull' stroke="#fbf236" d="M18 3h2M17 4h1M16 5h1M16 6h1M16 7h1M14 9h3M12 10h4M11 11h4M2 13h1M8 13h7M2 14h1M8 14h15M2 15h2M7 15h9M19 15h4M2 16h2M7 16h8M20 16h3M3 17h2M6 17h8M21 17h2M3 18h2M6 18h1M11 18h3M21 18h2M3 19h1M5 19h1M7 19h3M12 19h2M21 19h2M3 20h1M5 20h1M10 20h1M12 20h2M21 20h3M30 20h1M5 21h2M12 21h3M20 21h11M7 22h1M11 22h5M19 22h10" />
+                <path class='accent' stroke="#4b692f" d="M17 3h1M16 4h1M17 9h2M16 10h3M15 11h4M1 13h1M15 13h8M1 14h1M1 15h1M1 16h1M16 16h3M2 17h1M15 17h1M19 17h1M2 18h1M15 18h1M19 18h1M10 19h1M15 19h1M19 19h1M7 20h3M15 20h1M19 20h1M11 21h1M16 21h3M8 22h3" />
+                <path class='background' stroke="#5f7de4" d="M1 20h1M1 21h3M1 22h6M29 22h3M5 23h26" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M24 13h2M24 14h3M26 15h2M27 16h2M18 17h1M27 17h2M18 18h1M27 18h3M28 19h2" />
+                <path class='glass' stroke="#5fcde4" d="M24 15h2M24 16h3M16 17h2M24 17h3M16 18h2M24 18h3M16 19h3M24 19h4M16 20h3" />
+                <path stroke="#8daaec" d="M0 19h2M0 20h1M0 22h1M0 23h1M4 23h1M31 23h1M5 24h2M9 24h1M13 24h2M18 24h1M22 24h2M26 24h2M30 24h2" />
+                <path stroke="#ffffff" d="M0 21h1M1 23h3M4 24h1M7 24h2M10 24h3M15 24h3M19 24h3M24 24h2M28 24h2" />
+                <path stroke="#3270dc" d="M4 21h1" />
+              </symbol>
+              <symbol id="water-up">
+                <path stroke="#000000" d="M15 2h3M15 3h1M17 3h1M15 4h1M17 4h1M15 5h1M17 5h1M15 6h1M17 6h1M15 7h1M17 7h1M14 8h5M12 9h2M19 9h2M10 10h2M21 10h2M10 11h1M22 11h1M10 12h2M15 12h3M21 12h2M8 13h2M22 13h2M7 14h1M15 14h2M24 14h1M6 15h1M15 15h1M17 15h1M25 15h1M6 16h1M15 16h1M17 16h1M25 16h1M5 17h1M14 17h1M18 17h1M26 17h1M5 18h1M14 18h1M16 18h1M18 18h1M26 18h1M5 19h1M13 19h1M16 19h1M19 19h1M26 19h1M5 20h2M13 20h1M16 20h1M19 20h1M25 20h2" />
+                <path class='hull' stroke="#fbf236" d="M16 3h1M16 4h1M16 5h1M15 9h3M14 10h5M11 11h11M12 12h3M18 12h3M10 13h12M9 14h6M17 14h6M10 15h5M18 15h4M10 16h5M16 16h1M18 16h4M10 17h4M15 17h3M19 17h3M10 18h4M15 18h1M17 18h1M19 18h3M9 19h4M14 19h2M17 19h2M20 19h3M7 20h6M15 20h1M17 20h1M20 20h5" />
+                <path class='accent' stroke="#4b692f" d="M16 6h1M16 7h1M14 9h1M18 9h1M12 10h2M19 10h2M8 14h1M23 14h1M9 15h1M16 15h1M22 15h1M9 16h1M22 16h1M6 17h1M9 17h1M22 17h1M25 17h1M6 18h1M9 18h1M22 18h1M25 18h1M6 19h3M23 19h3M14 20h1M18 20h1" />
+                <path class='background' stroke="#5f7de4" d="M4 19h1M27 19h1M4 20h1M27 20h1M3 21h26M2 22h28M5 23h23" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M7 15h1M24 15h1M7 16h1M24 16h1" />
+                <path class='glass' stroke="#5fcde4" d="M8 15h1M23 15h1M8 16h1M23 16h1M7 17h2M23 17h2M7 18h2M23 18h2" />
+                <path stroke="#ffffff" d="M3 20h1M28 20h1M2 21h1M29 21h1M3 24h1M6 24h1M10 24h1M15 24h1M20 24h1M25 24h2M28 24h2M4 25h2M7 25h2M12 25h2M17 25h2M22 25h2M26 25h1" />
+                <path stroke="#8daaec" d="M2 23h3M28 23h2M2 24h1M4 24h2M7 24h3M11 24h4M16 24h4M21 24h4M27 24h1M2 25h2M6 25h1M9 25h3M14 25h3M19 25h3M24 25h2M27 25h3" />
+              </symbol>
+              <symbol id="water-up-right">
+                <path stroke="#000000" d="M13 3h5M21 3h2M13 4h1M17 4h1M19 4h2M22 4h3M13 5h3M17 5h2M21 5h1M25 5h2M15 6h1M17 6h1M21 6h1M27 6h2M14 7h2M17 7h3M21 7h1M29 7h1M13 8h1M15 8h1M17 8h1M19 8h1M21 8h1M29 8h1M12 9h1M19 9h1M21 9h1M30 9h1M12 10h1M21 10h1M30 10h1M11 11h5M17 11h1M19 11h1M21 11h1M30 11h1M11 12h1M22 12h1M30 12h1M11 13h1M23 13h1M29 13h1M1 14h2M24 14h6M0 15h1M3 15h1M10 15h1M28 15h1M0 16h1M3 16h1M9 16h1M27 16h1M0 17h1M9 17h1M26 17h1M0 18h1M4 18h1M26 18h1M0 19h1M5 19h1M8 19h1M25 19h1M0 20h1M6 20h2M12 20h1M25 20h1M1 21h1M9 21h1M12 21h1M23 21h2" />
+                <path class='hull' stroke="#fbf236" d="M16 4h1M21 4h1M16 5h1M19 5h2M16 6h1M20 6h1M16 7h1M14 8h1M18 8h1M13 9h6M13 10h8M18 11h1M20 11h1M16 12h6M13 13h10M12 14h5M18 14h6M12 15h4M19 15h7M2 16h1M11 16h4M20 16h6M2 17h2M11 17h4M20 17h5M2 18h2M10 18h5M20 18h5M2 19h3M9 19h7M19 19h4M2 20h4M8 20h4M13 20h4M18 20h5M3 21h6M10 21h2M13 21h8" />
+                <path class='accent' stroke="#4b692f" d="M14 4h2M18 6h2M20 7h1M16 8h1M20 8h1M20 9h1M16 11h1M12 12h4M12 13h1M11 14h1M17 14h1M1 15h2M11 15h1M16 15h1M18 15h1M26 15h2M1 16h1M10 16h1M15 16h1M19 16h1M26 16h1M1 17h1M10 17h1M15 17h1M19 17h1M25 17h1M1 18h1M9 18h1M15 18h1M19 18h1M25 18h1M1 19h1M16 19h1M18 19h1M23 19h2M1 20h1M17 20h1M23 20h2M2 21h1M21 21h2" />
+                <path class='background' stroke="#5f7de4" d="M4 19h1M27 19h1M4 20h1M27 20h1M3 21h26M2 22h28M5 23h23" />
+                <path class='background' stroke="#5f7de4" d="M19 3h2M18 4h1M14 6h1M13 7h1M12 8h1M11 10h1M10 12h1M1 13h2M10 13h1M0 14h1M4 14h1M10 14h1M9 15h1M29 15h2M5 16h1M28 16h2M27 17h2M7 18h2M27 18h2M6 19h2M26 19h3M26 20h1M0 21h1M25 21h3M3 22h22M29 22h1" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M22 5h3M22 6h5M26 7h3M27 8h2M27 9h3M29 10h1M17 15h1M17 16h2M18 17h1" />
+                <path class='glass' stroke="#5fcde4" d="M22 7h4M22 8h5M22 9h5M22 10h7M22 11h8M23 12h7M24 13h5M16 16h1M16 17h2M16 18h3M17 19h1" />
+                <path stroke="#8daaec" d="M19 2h1M22 2h1M18 3h1M24 3h1M26 4h1M27 5h1M13 6h1M29 6h1M12 7h1M30 8h1M11 9h1M10 10h1M10 11h1M0 13h1M3 13h2M7 13h3M7 14h1M9 14h1M4 15h1M8 15h1M4 16h1M6 16h1M8 16h1M5 17h1M7 17h2M29 17h1M6 18h1M29 18h1M29 19h1M27 20h3M28 21h2M1 22h2M25 22h4M2 23h27M1 24h1M4 24h1M7 24h4M12 24h4M17 24h4M22 24h3M26 24h2M29 24h1M2 25h3M6 25h2M10 25h3M15 25h3M20 25h3M25 25h1M28 25h2" />
+                <path stroke="#ffffff" d="M20 2h2M23 3h1M25 4h1M28 5h2M12 6h1M11 7h1M30 7h1M11 8h1M10 9h1M9 10h1M9 11h1M9 12h1M30 13h1M3 14h1M8 14h1M30 14h1M7 15h1M7 16h1M4 17h1M6 17h1M5 18h1M1 23h1M29 23h1M2 24h2M5 24h2M11 24h1M16 24h1M21 24h1M25 24h1M28 24h1M1 25h1M5 25h1M8 25h2M13 25h2M18 25h2M23 25h2M26 25h2" />  
+            </symbol>
+              <symbol id="water-up-left">
+                <path stroke="#000000" d="M9 3h2M14 3h5M7 4h3M11 4h2M14 4h1M18 4h1M5 5h2M10 5h1M13 5h2M16 5h3M3 6h2M10 6h1M14 6h1M16 6h1M2 7h1M10 7h1M12 7h3M16 7h2M2 8h1M10 8h1M12 8h1M14 8h1M16 8h1M18 8h1M1 9h1M10 9h1M12 9h1M19 9h1M1 10h1M10 10h1M19 10h1M1 11h1M10 11h1M12 11h1M14 11h1M16 11h5M1 12h1M9 12h1M20 12h1M2 13h1M8 13h1M20 13h1M2 14h6M29 14h2M3 15h1M21 15h1M28 15h1M31 15h1M4 16h1M22 16h1M28 16h1M31 16h1M5 17h1M22 17h1M31 17h1M5 18h1M27 18h1M31 18h1M6 19h1M23 19h1M26 19h1M31 19h1M6 20h1M19 20h1M24 20h2M31 20h1M7 21h2M19 21h1M22 21h1M30 21h1" />
+                <path class='hull' stroke="#fbf236" d="M10 4h1M15 4h1M11 5h2M15 5h1M11 6h1M15 6h1M15 7h1M13 8h1M17 8h1M13 9h6M11 10h8M11 11h1M13 11h1M10 12h6M9 13h10M8 14h6M15 14h5M6 15h7M16 15h4M6 16h6M17 16h4M29 16h1M7 17h5M17 17h4M28 17h2M7 18h5M17 18h5M28 18h2M9 19h4M16 19h7M27 19h3M9 20h5M15 20h4M20 20h4M26 20h4M11 21h8M20 21h2M23 21h6" />
+                <path class='accent' stroke="#4b692f" d="M16 4h2M12 6h2M11 7h1M11 8h1M15 8h1M11 9h1M15 11h1M16 12h4M19 13h1M14 14h1M20 14h1M4 15h2M13 15h1M15 15h1M20 15h1M29 15h2M5 16h1M12 16h1M16 16h1M21 16h1M30 16h1M6 17h1M12 17h1M16 17h1M21 17h1M30 17h1M6 18h1M12 18h1M16 18h1M22 18h1M30 18h1M7 19h2M13 19h1M15 19h1M30 19h1M7 20h2M14 20h1M30 20h1M9 21h2M29 21h1" />
+                <path class='background' stroke="#5f7de4" d="M11 3h2M13 4h1M17 6h1M18 7h1M19 8h1M20 10h1M21 12h1M21 13h1M29 13h2M21 14h1M27 14h1M31 14h1M1 15h2M22 15h1M2 16h2M26 16h1M3 17h2M3 18h2M23 18h2M3 19h3M24 19h2M5 20h1M4 21h3M31 21h1M2 22h1M7 22h22" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M7 5h3M5 6h5M3 7h3M3 8h2M2 9h3M2 10h1M14 15h1M13 16h2M13 17h1" />
+                <path class='glass' stroke="#5fcde4" d="M6 7h4M5 8h5M5 9h5M3 10h7M2 11h8M2 12h7M3 13h5M15 16h1M14 17h2M13 18h3M14 19h1" />
+                <path stroke="#8daaec" d="M9 2h1M12 2h1M7 3h1M13 3h1M5 4h1M4 5h1M2 6h1M18 6h1M19 7h1M1 8h1M20 9h1M21 10h1M21 11h1M22 13h3M27 13h2M31 13h1M22 14h1M24 14h1M23 15h1M27 15h1M23 16h1M25 16h1M27 16h1M2 17h1M23 17h2M26 17h1M2 18h1M25 18h1M2 19h1M2 20h3M2 21h2M3 22h4M29 22h2M3 23h27M2 24h1M4 24h2M7 24h3M11 24h4M16 24h4M21 24h4M27 24h1M30 24h1M2 25h2M6 25h1M9 25h3M14 25h3M19 25h3M24 25h2M27 25h3" />
+                <path stroke="#ffffff" d="M10 2h2M8 3h1M6 4h1M2 5h2M19 6h1M1 7h1M20 7h1M20 8h1M21 9h1M22 10h1M22 11h1M22 12h1M1 13h1M1 14h1M23 14h1M28 14h1M24 15h1M24 16h1M25 17h1M27 17h1M26 18h1M2 23h1M30 23h1M3 24h1M6 24h1M10 24h1M15 24h1M20 24h1M25 24h2M28 24h2M4 25h2M7 25h2M12 25h2M17 25h2M22 25h2M26 25h1M30 25h1" />
+              </symbol>
+
+            <!--Full Body -->
+            <symbol id="full-down">
+                <path stroke="#000000" d="M15 2h3M15 3h1M17 3h1M15 4h1M17 4h1M15 5h1M17 5h1M15 6h1M17 6h1M15 7h1M17 7h1M14 8h6M12 9h2M19 9h2M11 10h1M21 10h1M10 11h1M22 11h1M9 12h1M23 12h1M8 13h1M24 13h1M7 14h1M25 14h1M6 15h1M26 15h1M6 16h1M26 16h1M5 17h2M26 17h2M5 18h2M26 18h2M5 19h1M7 19h1M25 19h1M27 19h1M5 20h1M8 20h17M27 20h1M3 21h2M28 21h2M2 22h1M30 22h1M2 23h1M30 23h1M3 24h5M25 24h5M8 25h2M23 25h2M10 26h2M21 26h2M12 27h1M20 27h1M13 28h7" />
+                <path class='hull' stroke="#fbf236" d="M16 3h1M16 4h1M16 5h1M15 9h3M14 10h5M11 11h5M18 11h4M10 12h1M13 12h2M19 12h1M22 12h1M6 20h1M26 20h1M6 21h9M18 21h9M4 22h25M8 23h4M15 23h3M21 23h4M10 24h3M20 24h3M12 25h9M13 26h7" />
+                <path class='accent' stroke="#4b692f" d="M16 6h1M16 7h1M14 9h1M18 9h1M12 10h2M19 10h2M16 11h2M11 12h2M15 12h4M20 12h2M6 19h1M26 19h1M7 20h1M25 20h1M5 21h1M15 21h3M27 21h1M3 22h1M29 22h1M3 23h5M12 23h3M18 23h3M25 23h5M8 24h2M13 24h7M23 24h2M10 25h2M21 25h2M12 26h1M20 26h1M13 27h7" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M9 13h15M8 14h17M7 15h1M10 15h13M25 15h1M7 16h1M11 16h11M25 16h1M7 17h1M12 17h9M25 17h1M7 18h1M14 18h5M25 18h1M8 19h2M23 19h2" />
+                <path class='glass' stroke="#5fcde4" d="M8 15h2M23 15h2M8 16h3M22 16h3M8 17h4M21 17h4M8 18h6M19 18h6M10 19h13" />
+              </symbol>
+              <symbol id="full-down-right">
+                <path stroke="#000000" d="M3 1h2M2 2h2M5 2h1M2 3h1M5 3h1M15 3h5M2 4h1M5 4h3M15 4h1M19 4h1M2 5h2M7 5h2M15 5h1M17 5h3M3 6h1M8 6h2M15 6h1M17 6h1M2 7h2M6 7h1M9 7h3M15 7h1M17 7h1M2 8h1M5 8h1M12 8h2M15 8h1M17 8h1M2 9h2M6 9h2M13 9h7M3 10h1M13 10h1M20 10h2M4 11h1M15 11h2M22 11h1M4 12h1M17 12h5M23 12h1M4 13h1M13 13h1M18 13h4M24 13h1M4 14h1M12 14h1M25 14h1M3 15h2M12 15h1M26 15h1M3 16h1M12 16h1M27 16h1M3 17h1M12 17h1M27 17h1M4 18h1M12 18h1M27 18h2M4 19h1M12 19h1M26 19h3M5 20h1M12 20h1M26 20h1M28 20h1M5 21h1M12 21h14M28 21h1M6 22h1M9 22h3M14 22h2M28 22h1M6 23h2M9 23h1M16 23h1M28 23h1M8 24h2M17 24h1M28 24h1M10 25h1M18 25h2M26 25h3M11 26h1M19 26h1M24 26h3M28 26h1M12 27h2M20 27h6M28 27h1M14 28h1M27 28h2M15 29h1M27 29h1M16 30h11" />
+                <path class='hull'stroke="#fbf236" d="M4 3h1M4 4h1M16 4h1M4 5h3M16 5h1M4 6h4M16 6h1M4 7h2M7 7h2M16 7h1M3 8h2M6 8h6M4 9h2M8 9h5M4 10h9M14 10h3M5 11h3M9 11h6M17 11h3M5 12h2M10 12h7M22 12h1M5 13h1M11 13h2M14 13h4M22 13h2M5 14h1M11 14h1M5 15h1M11 15h1M5 16h2M10 16h2M5 17h3M9 17h3M6 18h6M6 19h6M7 20h5M27 20h1M7 21h5M26 21h2M12 22h2M16 22h12M10 23h6M17 23h11M10 24h7M18 24h10M12 25h6M20 25h6M14 26h5M20 26h4M15 27h5M17 28h9" />
+                <path class='accent' stroke="#4b692f" d="M4 2h1M3 3h1M3 4h1M17 4h2M16 8h1M17 10h3M8 11h1M20 11h2M7 12h1M9 12h1M6 13h1M10 13h1M6 14h1M10 14h1M6 15h1M10 15h1M4 16h1M7 16h1M9 16h1M4 17h1M8 17h1M5 18h1M5 19h1M6 20h1M6 21h1M7 22h2M8 23h1M11 25h1M12 26h2M27 26h1M14 27h1M26 27h2M15 28h2M26 28h1M16 29h11" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M8 12h1M7 13h2M13 14h12M13 15h13M13 16h13M14 17h9M24 17h1M15 18h7M16 19h4" />
+                <path class='glass' stroke="#5fcde4" d="M9 13h1M7 14h3M7 15h3M8 16h1M26 16h1M13 17h1M23 17h1M25 17h2M13 18h2M22 18h5M13 19h3M20 19h6M13 20h13" />
+              </symbol>
+              <symbol id="full-down-left">
+                <path stroke="#000000" d="M27 1h2M26 2h1M28 2h2M12 3h5M26 3h1M29 3h1M12 4h1M16 4h1M24 4h3M29 4h1M12 5h3M16 5h1M23 5h2M28 5h2M14 6h1M16 6h1M22 6h2M28 6h1M14 7h1M16 7h1M20 7h3M25 7h1M28 7h2M14 8h1M16 8h1M18 8h2M26 8h1M29 8h1M12 9h7M24 9h2M28 9h2M10 10h2M18 10h1M28 10h1M9 11h1M15 11h2M27 11h1M8 12h1M10 12h5M27 12h1M7 13h1M10 13h4M18 13h1M27 13h1M6 14h1M19 14h1M27 14h1M5 15h1M19 15h1M27 15h2M4 16h1M19 16h1M28 16h1M4 17h1M19 17h1M28 17h1M3 18h2M19 18h1M27 18h1M3 19h3M19 19h1M27 19h1M3 20h1M5 20h1M19 20h1M26 20h1M3 21h1M6 21h14M26 21h1M3 22h1M16 22h2M20 22h3M25 22h1M3 23h1M15 23h1M22 23h1M24 23h2M3 24h1M14 24h1M22 24h2M3 25h3M12 25h2M21 25h1M3 26h1M5 26h3M12 26h1M20 26h1M3 27h1M6 27h6M18 27h2M3 28h2M17 28h1M4 29h1M16 29h1M5 30h11" />
+                <path class='hull' stroke="#fbf236" d="M27 3h1M15 4h1M27 4h1M15 5h1M25 5h3M15 6h1M24 6h4M15 7h1M23 7h2M26 7h2M20 8h6M27 8h2M19 9h5M26 9h2M15 10h3M19 10h9M12 11h3M17 11h6M24 11h3M9 12h1M15 12h7M25 12h2M8 13h2M14 13h4M19 13h2M26 13h1M20 14h1M26 14h1M20 15h1M26 15h1M20 16h2M25 16h2M20 17h3M24 17h3M20 18h6M20 19h6M4 20h1M20 20h5M4 21h2M20 21h5M4 22h12M18 22h2M4 23h11M16 23h6M4 24h10M15 24h7M6 25h6M14 25h6M8 26h4M13 26h5M12 27h5M6 28h9" />
+                <path class='accent' stroke="#4b692f" d="M27 2h1M28 3h1M13 4h2M28 4h1M15 8h1M12 10h3M10 11h2M23 11h1M22 12h1M24 12h1M21 13h1M25 13h1M21 14h1M25 14h1M21 15h1M25 15h1M22 16h1M24 16h1M27 16h1M23 17h1M27 17h1M26 18h1M26 19h1M25 20h1M25 21h1M23 22h2M23 23h1M20 25h1M4 26h1M18 26h2M4 27h2M17 27h1M5 28h1M15 28h2M5 29h11" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M23 12h1M23 13h2M7 14h12M6 15h13M6 16h13M7 17h1M9 17h9M10 18h7M12 19h4" />
+                <path class='glass' stroke="#5fcde4" d="M22 13h1M22 14h3M22 15h3M5 16h1M23 16h1M5 17h2M8 17h1M18 17h1M5 18h5M17 18h2M6 19h6M16 19h3M6 20h13" />
+              </symbol>
+            <symbol id="full-left">
+                <path stroke="#000000" d="M11 2h4M11 3h1M15 3h1M11 4h3M16 4h1M14 5h1M16 5h1M14 6h1M16 6h1M14 7h1M16 7h1M13 8h5M12 9h1M18 9h2M12 10h1M20 10h2M12 11h1M21 11h1M5 12h19M29 12h2M4 13h2M8 13h1M24 13h1M28 13h1M31 13h1M3 14h2M8 14h1M24 14h1M28 14h1M31 14h1M3 15h1M8 15h1M13 15h3M25 15h1M27 15h1M31 15h1M2 16h1M8 16h1M12 16h1M16 16h1M25 16h1M27 16h1M31 16h1M2 17h1M8 17h1M11 17h1M17 17h1M26 17h1M30 17h1M1 18h1M8 18h1M11 18h1M17 18h1M21 18h4M26 18h1M30 18h1M1 19h1M8 19h1M11 19h1M17 19h1M20 19h1M25 19h1M27 19h1M29 19h1M0 20h1M2 20h6M11 20h1M17 20h1M20 20h1M25 20h1M27 20h1M29 20h1M0 21h1M12 21h1M16 21h1M21 21h4M27 21h3M1 22h1M13 22h3M27 22h1M29 22h1M1 23h1M26 23h1M30 23h1M2 24h1M26 24h1M30 24h1M2 25h1M25 25h1M27 25h1M31 25h1M3 26h1M24 26h1M27 26h1M31 26h1M4 27h20M28 27h1M31 27h1M28 28h1M31 28h1M29 29h2" />
+                <path class='hull' stroke="#fbf236" d="M12 3h2M14 4h1M15 5h1M15 6h1M15 7h1M15 9h3M16 10h4M17 11h4M17 13h7M29 13h1M9 14h15M29 14h1M9 15h4M16 15h9M28 15h2M9 16h3M17 16h8M28 16h2M9 17h2M18 17h8M27 17h2M9 18h2M18 18h3M25 18h1M27 18h2M9 19h2M18 19h2M22 19h3M26 19h1M28 19h1M1 20h1M8 20h3M18 20h2M21 20h1M26 20h1M28 20h1M1 21h11M17 21h3M25 21h2M2 22h11M16 22h5M24 22h3M28 22h1M2 23h19M23 23h3M27 23h3M10 24h10M23 24h3M27 24h3M15 25h4M23 25h2M28 25h2M23 26h1M28 26h3M30 27h1M30 28h1" />
+                <path class='accent' stroke="#4b692f" d="M14 3h1M15 4h1M13 9h2M13 10h3M13 11h4M9 13h8M30 13h1M30 14h1M30 15h1M13 16h3M30 16h1M12 17h1M16 17h1M29 17h1M12 18h1M16 18h1M29 18h1M12 19h1M16 19h1M21 19h1M12 20h1M16 20h1M22 20h3M13 21h3M20 21h1M21 22h3M21 23h2M3 24h7M20 24h3M3 25h12M19 25h4M30 25h1M4 26h19M29 27h1M29 28h1" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M6 13h2M5 14h3M4 15h2M3 16h2M3 17h2M13 17h1M2 18h3M13 18h1M2 19h2" />
+                <path class='glass' stroke="#5fcde4" d="M6 15h2M5 16h3M5 17h3M14 17h2M5 18h3M14 18h2M4 19h4M13 19h3M13 20h3" />
+              </symbol>
+              <symbol id="full-right">
+                <path stroke="#000000" d="M17 2h4M16 3h1M20 3h1M15 4h1M18 4h3M15 5h1M17 5h1M15 6h1M17 6h1M15 7h1M17 7h1M14 8h5M12 9h2M19 9h1M10 10h2M19 10h1M10 11h1M19 11h1M1 12h2M8 12h19M0 13h1M3 13h1M7 13h1M23 13h1M26 13h2M0 14h1M3 14h1M7 14h1M23 14h1M27 14h2M0 15h1M4 15h1M6 15h1M16 15h3M23 15h1M28 15h1M0 16h1M4 16h1M6 16h1M15 16h1M19 16h1M23 16h1M29 16h1M1 17h1M5 17h1M14 17h1M20 17h1M23 17h1M29 17h1M1 18h1M5 18h1M7 18h4M14 18h1M20 18h1M23 18h1M30 18h1M2 19h1M4 19h1M6 19h1M11 19h1M14 19h1M20 19h1M23 19h1M30 19h1M2 20h1M4 20h1M6 20h1M11 20h1M14 20h1M20 20h1M24 20h6M31 20h1M2 21h3M7 21h4M15 21h1M19 21h1M31 21h1M2 22h1M4 22h1M16 22h3M30 22h1M1 23h1M5 23h1M30 23h1M1 24h1M5 24h1M29 24h1M0 25h1M4 25h1M6 25h1M29 25h1M0 26h1M4 26h1M7 26h1M28 26h1M0 27h1M3 27h1M8 27h20M0 28h1M3 28h1M1 29h2" />
+                <path class='hull' stroke="#fbf236" d="M18 3h2M17 4h1M16 5h1M16 6h1M16 7h1M14 9h3M12 10h4M11 11h4M2 13h1M8 13h7M2 14h1M8 14h15M2 15h2M7 15h9M19 15h4M2 16h2M7 16h8M20 16h3M3 17h2M6 17h8M21 17h2M3 18h2M6 18h1M11 18h3M21 18h2M3 19h1M5 19h1M7 19h3M12 19h2M21 19h2M3 20h1M5 20h1M10 20h1M12 20h2M21 20h3M30 20h1M5 21h2M12 21h3M20 21h11M3 22h1M5 22h3M11 22h5M19 22h11M2 23h3M6 23h3M11 23h19M2 24h3M6 24h3M12 24h10M2 25h2M7 25h2M13 25h4M1 26h3M8 26h1M1 27h1M1 28h1" />
+                <path class='accent' stroke="#4b692f" d="M17 3h1M16 4h1M17 9h2M16 10h3M15 11h4M1 13h1M15 13h8M1 14h1M1 15h1M1 16h1M16 16h3M2 17h1M15 17h1M19 17h1M2 18h1M15 18h1M19 18h1M10 19h1M15 19h1M19 19h1M7 20h3M15 20h1M19 20h1M11 21h1M16 21h3M8 22h3M9 23h2M9 24h3M22 24h7M1 25h1M9 25h4M17 25h12M9 26h19M2 27h1M2 28h1" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M24 13h2M24 14h3M26 15h2M27 16h2M18 17h1M27 17h2M18 18h1M27 18h3M28 19h2" />
+                <path class='glass' stroke="#5fcde4" d="M24 15h2M24 16h3M16 17h2M24 17h3M16 18h2M24 18h3M16 19h3M24 19h4M16 20h3" />
+              </symbol>
+              <symbol id="full-up">
+                <path stroke="#000000" d="M15 2h3M15 3h1M17 3h1M15 4h1M17 4h1M15 5h1M17 5h1M15 6h1M17 6h1M15 7h1M17 7h1M14 8h5M12 9h2M19 9h2M10 10h2M21 10h2M10 11h1M22 11h1M10 12h2M15 12h3M21 12h2M8 13h2M22 13h2M7 14h1M15 14h2M24 14h1M6 15h1M15 15h1M17 15h1M25 15h1M6 16h1M15 16h1M17 16h1M25 16h1M5 17h1M14 17h1M18 17h1M26 17h1M5 18h1M14 18h1M16 18h1M18 18h1M26 18h1M5 19h1M13 19h1M16 19h1M19 19h1M26 19h1M5 20h2M13 20h1M16 20h1M19 20h1M25 20h2M3 21h2M14 21h1M16 21h1M18 21h1M27 21h2M2 22h1M14 22h1M18 22h1M29 22h1M2 23h1M15 23h1M17 23h1M29 23h1M3 24h5M15 24h1M17 24h1M24 24h5M8 25h2M16 25h1M22 25h2M10 26h2M20 26h2M12 27h1M19 27h1M13 28h6" />
+                <path class='hull' stroke="#fbf236" d="M16 3h1M16 4h1M16 5h1M15 9h3M14 10h5M11 11h11M12 12h3M18 12h3M10 13h12M9 14h6M17 14h6M10 15h5M18 15h4M10 16h5M16 16h1M18 16h4M10 17h4M15 17h3M19 17h3M10 18h4M15 18h1M17 18h1M19 18h3M9 19h4M14 19h2M17 19h2M20 19h3M7 20h6M15 20h1M17 20h1M20 20h5M6 21h8M15 21h1M17 21h1M19 21h7M4 22h10M16 22h1M19 22h9M8 23h7M18 23h6M10 24h5M18 24h4M12 25h4M17 25h3M13 26h6" />
+                <path class='accent' stroke="#4b692f" d="M16 6h1M16 7h1M14 9h1M18 9h1M12 10h2M19 10h2M8 14h1M23 14h1M9 15h1M16 15h1M22 15h1M9 16h1M22 16h1M6 17h1M9 17h1M22 17h1M25 17h1M6 18h1M9 18h1M22 18h1M25 18h1M6 19h3M23 19h3M14 20h1M18 20h1M5 21h1M26 21h1M3 22h1M15 22h1M17 22h1M28 22h1M3 23h5M16 23h1M24 23h5M8 24h2M16 24h1M22 24h2M10 25h2M20 25h2M12 26h1M19 26h1M13 27h6" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M7 15h1M24 15h1M7 16h1M24 16h1" />
+                <path class='glass' stroke="#5fcde4" d="M8 15h1M23 15h1M8 16h1M23 16h1M7 17h2M23 17h2M7 18h2M23 18h2" />
+            </symbol>
+              <symbol id="full-up-right">
+                <path stroke="#000000" d="M13 3h5M21 3h2M13 4h1M17 4h1M19 4h2M22 4h3M13 5h3M17 5h2M21 5h1M25 5h2M15 6h1M17 6h1M21 6h1M27 6h2M13 7h3M17 7h3M21 7h1M29 7h1M12 8h2M15 8h1M17 8h1M19 8h1M21 8h1M29 8h1M12 9h1M19 9h1M21 9h1M30 9h1M11 10h2M21 10h1M30 10h1M11 11h5M17 11h1M19 11h1M21 11h1M30 11h1M11 12h1M22 12h1M30 12h1M11 13h1M23 13h1M29 13h1M1 14h2M10 14h1M24 14h6M0 15h1M3 15h1M10 15h1M28 15h1M0 16h1M3 16h1M9 16h1M27 16h1M0 17h1M4 17h1M9 17h1M26 17h1M0 18h1M4 18h1M8 18h1M26 18h1M0 19h1M5 19h1M8 19h1M25 19h1M0 20h1M6 20h2M12 20h1M25 20h1M1 21h1M9 21h1M12 21h1M23 21h2M1 22h1M9 22h1M12 22h1M21 22h2M2 23h2M10 23h2M18 23h3M4 24h1M16 24h2M4 25h1M9 25h7M4 26h1M9 26h1M3 27h2M8 27h1M3 28h1M8 28h1M3 29h1M7 29h1M3 30h2M7 30h1M5 31h2" />
+                <path class='hull' stroke="#fbf236" d="M16 4h1M21 4h1M16 5h1M19 5h2M16 6h1M20 6h1M16 7h1M14 8h1M18 8h1M13 9h6M13 10h8M18 11h1M20 11h1M16 12h6M13 13h10M12 14h5M18 14h6M12 15h4M19 15h7M2 16h1M11 16h4M20 16h6M2 17h2M11 17h4M20 17h5M2 18h2M10 18h5M20 18h5M2 19h3M9 19h7M19 19h4M2 20h4M8 20h4M13 20h4M18 20h5M3 21h6M10 21h2M13 21h8M3 22h5M10 22h2M13 22h5M4 23h4M12 23h4M6 24h8M6 25h3M6 26h3M5 27h3M5 28h3M5 29h2" />
+                <path class='accent' stroke="#4b692f" d="M14 4h2M18 6h2M20 7h1M16 8h1M20 8h1M20 9h1M16 11h1M12 12h4M12 13h1M11 14h1M17 14h1M1 15h2M11 15h1M16 15h1M18 15h1M26 15h2M1 16h1M10 16h1M15 16h1M19 16h1M26 16h1M1 17h1M10 17h1M15 17h1M19 17h1M25 17h1M1 18h1M9 18h1M15 18h1M19 18h1M25 18h1M1 19h1M16 19h1M18 19h1M23 19h2M1 20h1M17 20h1M23 20h2M2 21h1M21 21h2M2 22h1M8 22h1M18 22h3M8 23h2M16 23h2M5 24h1M14 24h2M5 25h1M5 26h1M4 28h1M4 29h1M5 30h2" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M22 5h3M22 6h5M26 7h3M27 8h2M27 9h3M29 10h1M17 15h1M17 16h2M18 17h1" />
+                <path class='glass' stroke="#5fcde4" d="M22 7h4M22 8h5M22 9h5M22 10h7M22 11h8M23 12h7M24 13h5M16 16h1M16 17h2M16 18h3M17 19h1" />
+              </symbol>
+              <symbol id="full-up-left">
+                <path stroke="#000000" d="M9 3h2M14 3h5M7 4h3M11 4h2M14 4h1M18 4h1M5 5h2M10 5h1M13 5h2M16 5h3M3 6h2M10 6h1M14 6h1M16 6h1M2 7h1M10 7h1M12 7h3M16 7h3M2 8h1M10 8h1M12 8h1M14 8h1M16 8h1M18 8h2M1 9h1M10 9h1M12 9h1M19 9h1M1 10h1M10 10h1M19 10h2M1 11h1M10 11h1M12 11h1M14 11h1M16 11h5M1 12h1M9 12h1M20 12h1M2 13h1M8 13h1M20 13h1M2 14h6M21 14h1M29 14h2M3 15h1M21 15h1M28 15h1M31 15h1M4 16h1M22 16h1M28 16h1M31 16h1M5 17h1M22 17h1M27 17h1M31 17h1M5 18h1M23 18h1M27 18h1M31 18h1M6 19h1M23 19h1M26 19h1M31 19h1M6 20h1M19 20h1M24 20h2M31 20h1M7 21h2M19 21h1M22 21h1M30 21h1M9 22h2M19 22h1M22 22h1M30 22h1M11 23h3M20 23h2M28 23h2M14 24h2M27 24h1M16 25h7M27 25h1M22 26h1M27 26h1M23 27h1M27 27h2M23 28h1M28 28h1M24 29h1M28 29h1M24 30h1M27 30h2M25 31h2" />
+                <path class='hull' stroke="#fbf236" d="M10 4h1M15 4h1M11 5h2M15 5h1M11 6h1M15 6h1M15 7h1M13 8h1M17 8h1M13 9h6M11 10h8M11 11h1M13 11h1M10 12h6M9 13h10M8 14h6M15 14h5M6 15h7M16 15h4M6 16h6M17 16h4M29 16h1M7 17h5M17 17h4M28 17h2M7 18h5M17 18h5M28 18h2M9 19h4M16 19h7M27 19h3M9 20h5M15 20h4M20 20h4M26 20h4M11 21h8M20 21h2M23 21h6M14 22h5M20 22h2M24 22h5M16 23h4M24 23h4M18 24h8M23 25h3M23 26h3M24 27h3M24 28h3M25 29h2" />
+                <path class='accent' stroke="#4b692f" d="M16 4h2M12 6h2M11 7h1M11 8h1M15 8h1M11 9h1M15 11h1M16 12h4M19 13h1M14 14h1M20 14h1M4 15h2M13 15h1M15 15h1M20 15h1M29 15h2M5 16h1M12 16h1M16 16h1M21 16h1M30 16h1M6 17h1M12 17h1M16 17h1M21 17h1M30 17h1M6 18h1M12 18h1M16 18h1M22 18h1M30 18h1M7 19h2M13 19h1M15 19h1M30 19h1M7 20h2M14 20h1M30 20h1M9 21h2M29 21h1M11 22h3M23 22h1M29 22h1M14 23h2M22 23h2M16 24h2M26 24h1M26 25h1M26 26h1M27 28h1M27 29h1M25 30h2" />
+                <path class='glass-reflect' stroke="#cbdbfc" d="M7 5h3M5 6h5M3 7h3M3 8h2M2 9h3M2 10h1M14 15h1M13 16h2M13 17h1" />
+                <path class='glass' stroke="#5fcde4" d="M6 7h4M5 8h5M5 9h5M3 10h7M2 11h8M2 12h7M3 13h5M15 16h1M14 17h2M13 18h3M14 19h1" />
+              </symbol>
+          </defs>
+          <use href="#water-left"/>
+        </svg>
+
+        <script type="text/javascript">
+    
+            class Submersible {
+                
+                // Submersible modes
+                static get MODES() { 
+                    return new Map([ [0, 'water'], [1, 'submerged'], [2, 'land']])
+                }
+                static get WATER() { return 0; }
+                static get SUBMERGED() { return 1; }
+                static get LAND() { return 2; }
+
+                #hullPoints = 100
+                #oxygen = 100
+                #mode = Submersible.SURFACE; 
+                
+                #location = [2,1]
+                #direction = [-1,0]
+                #velocity = [0,0]
+
+                throttle(forward = true){
+                    let speed = [...this.#direction]
+                    if( !forward ){
+                        speed[0] *= -1
+                        speed[1] *= -1
+                    }
+                    this.#velocity[0] += speed[0]
+                    this.#velocity[1] += speed[1]
+
+                    for( let i = 0; i < this.#velocity.length; i++ ){
+                        if(this.#velocity[i] < -1){
+                            this.#velocity[i] = -1;
+                        }
+                        else if( this.#velocity[i] > 1 ){
+                            this.#velocity[i] = 1;
+                        }
+                    }
+
+                }
+
+                turn(left = true){
+                    if(this.#velocity[0] === 0 ){
+                        return;
+                    }
+
+                    let speed = 
+
+                }
+
+                get location() {
+                    return [...this.#location]
+                }
+
+            }
+
+            let player = new Submersible();
+
+            // Graphical Elements
+            let playerSVG = null;
+            let worldMap = null;
+
+            function zoomMap(numRows = 10, numCols = 10, upperLeftCoord = [0,0]){
+                let container = document.querySelector('section.mapContainer');
+
+                worldMap = document.createElement('div');
+                worldMap.classList.add('worldMap');
+                worldMap.style.setProperty('--num-rows', numRows);
+                worldMap.style.setProperty('--num-cols', numCols);
+
+                for( let row = upperLeftCoord[1]; row < numRows+upperLeftCoord[1]; row++ ){
+                    for( let col = upperLeftCoord[0]; col < numCols+upperLeftCoord[0]; col++ ){
+                        let space = document.createElement('div');
+                        space.setAttribute('data-row', row)
+                        space.setAttribute('data-col', col);
+
+                        space.classList.add('space');
+                        worldMap.appendChild(space)
+                    }
+                }
+
+                container.replaceChildren(worldMap);
+            }
+
+            function drawPlayer(player){
+
+                let [col, row] = player.location;
+                let space = worldMap.querySelector(`[data-col='${col}'][data-row='${row}']`)
+
+                if(playerSVG.parentNode){
+                    playerSVG.parentNode.removeChild(playerSVG);
+                }
+                space.appendChild(playerSVG)
+
+                //playerSVG.querySelector("use").setAttribute("href","#under-right")
+                playerSVG.style.display = 'inline-block';
+            }
+
+            function init(){
+                playerSVG = document.querySelector("svg#player")
+                zoomMap(10, 10);
+                drawPlayer(player)
+
+
+                document.addEventListener('keyup', function(event){
+                    console.log(event.which)
+
+
+                    // W
+                    if( event.which === 87 ){
+                        player.throttle()
+                    }
+                    // D
+                    else if( event.which == 83 ){
+                        player.thottle(false)
+                    }
+                })
+            }
+
+            window.onload = init;
+        </script>
+    </body>
+</html>
