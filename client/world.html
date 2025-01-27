@@ -9,7 +9,7 @@
             }
 
             body.mainBody {
-                width: 100vw;
+                max-width: 100vw;
                 height: 100vh;
 
                 display: flex;
@@ -41,7 +41,9 @@
             }
 
             footer {
-                height: 10vh;
+                display: flex;
+
+                min-height: 10vh;
                 padding: 0.5rem;
             }
             section.base-stats {
@@ -56,9 +58,10 @@
             }
             div.wheel{
                 position: relative;
-                display: flex;
-                flex-direction: column;
-                align-items:center;
+                display: grid;
+                grid-template-rows: 2fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
+
                 
                 height: 100%;
                 aspect-ratio: 2;
@@ -68,45 +71,52 @@
                 border-start-start-radius: 200px;
                 border-block-end: 0;
 
+                background: white;
                 overflow: hidden;
             }
 
             div.wheel-slice {
-                height: 50%;
-                width: 100%;
-
                 position: relative;
                 background-color: white;
 
-                border: 1px solid black;
+                font-size: 2rem;
+                font-weight: bold;
+
+                border: 1px dashed black;
             }
             div.wheel-slice.forward{
-                height: 65%;
-                border-bottom: 1px solid black;
+                display: flex;
+                align-items: start;
+                justify-content: center;
+            }
+            div.wheel-slice.forward > .hotkey{
+                top: 0.5rem;
+                right: 0.5rem;
             }
             div.wheel-slice.reverse{
-                border-top: 0;
-                height: 35%;
+                display: flex;
+                justify-content: center;
+                align-items: end;
+            }
+            div.wheel-slice.reverse > .hotkey{
+                bottom: 0.5rem;
+                right: 0.5rem;
             }
             div.wheel-slice.left{
-                position: absolute;
-                left: 0;
-
-                width: 30%;
-                height: 100%;
-
-                border-right: 1px dashed darkgray;
-                border-bottom: 0;
+                display: flex;
+                align-items: end;
+                justify-content: end;
+            }
+            div.wheel-slice.left > .hotkey {
+                right: 50%;
             }
             div.wheel-slice.right{
-                position: absolute;
-                right: 0;
-
-                width: 30%;
-                height: 100%;
-
-                border-left: 1px dashed darkgray;
-                border-bottom: 0;
+                display: flex;
+                align-items: end;
+                justify-content: start;
+            }
+            div.wheel-slice.right > .hotkey {
+                right: 40%;
             }
             div.wheel-slice.center {
                 position: absolute;
@@ -115,17 +125,33 @@
                 transform: translate(-50%, -50%);
                 
                 aspect-ratio: 2 / 1;
-                width: 33%;
-                height: 66%;
+                width: 25%;
+                height: 50%;
 
                 border: 1px solid black;
                 border-radius: 100%;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+               
+            }
+            div.wheel-slice.on{
+                background-color: rgb(106, 24, 95);
+                color: white;
+            }
+            div.hotkey {
+                font-size: .75rem;
+
+                position: absolute;
+                right: 0;
+                bottom: 0;
             }
 
             div.hull-points{
                 --hull-level: 100%;
                 --hull-color: red;
-                --hull-container-color: red;
+                --hull-container-color: rgb(183, 123, 123);
 
                 position: absolute;
                 top: 0;
@@ -144,7 +170,7 @@
             div.oxygen {
                 --oxygen-level: 100%;
                 --oxygen-color: blue;
-                --oxygen-container-color: blue;
+                --oxygen-container-color: rgb(108, 108, 236);
 
                 position: absolute;
                 display: flex;
@@ -164,11 +190,38 @@
                 background: linear-gradient(to top, var(--oxygen-color) var(--oxygen-level), var(--oxygen-container-color) var(--oxygen-level) 100%);
                 z-index: -1;
             }   
-            
+
+            section.actionbar {
+                display: flex;
+                flex-grow: 1;
+                flex-direction: column;
+                overflow-x: auto;
+
+                background: green;
+                padding: 0.5em;
+            }
+            div.roundActions {
+                flex-grow: 1;
+            }
+            div.currentActions {
+                height: 100%;
+                display: flex;
+                flex-wrap: nowrap;
+            }
+            button.actionItem {
+                aspect-ratio: 1;
+                height: 100%;
+                font-size: 2rem;
+
+                min-height: 2rem;
+            }
             /*  Player Theme */
             svg#player {
                 width: 80%;
                 height: 80%;
+            }
+            svg#player.shadow {
+                filter: opacity(50%);
             }
           
         </style>
@@ -184,14 +237,16 @@
                     100
                 </div>
                 <div class="wheel">
+                    <div class="wheel-slice left"><div class="hotkey">A</div>&#8630;</div>
                     <div class="wheel-slice forward">
-                        <div class="wheel-slice left"></div>
-                        <div class="wheel-slice right"></div>
+                        <div>&#8613;</div><div class='hotkey'>W</div>
                     </div>
+                    <div class="wheel-slice right">&#8631;<div class="hotkey">D</div></div>
+                    <div class="wheel-slice"></div>
                     <div class="wheel-slice reverse">
-                        <div class="wheel-slice left"></div>
-                        <div class="wheel-slice right"></div>
+                        <div>&#8615;</div><div class='hotkey'>S</div>
                     </div>
+                    <div class="wheel-slice"></div>
                     <div class="wheel-slice center">
                     </div>
                 </div>
@@ -199,9 +254,16 @@
                     100
                 </div>
             </section>
+            <section class="actionbar">
+                <div class="roundActions"></div>
+                <div class="actions"></div>
+            </section>
+            <div>
+                Submit
+            </div>
         </footer>
 
-        <!-- Submerine sprites -->
+        <!-- Submarine sprites -->
         <svg style='display: none;' id='player' xmlns="http://www.w3.org/2000/svg" viewBox="0 -0.5 32 32" shape-rendering="crispEdges">
             <metadata>Made with Pixels to Svg https://codepen.io/shshaw/pen/XbxvNj</metadata>
             <defs>
@@ -431,54 +493,242 @@
                 static get SUBMERGED() { return 1; }
                 static get LAND() { return 2; }
 
-                #hullPoints = 100
-                #oxygen = 100
-                #mode = Submersible.SURFACE; 
+                #mode = Submersible.WATER; 
+
+                // [Current, Max]
+                #actionPoints = [2,2]
+                #hullPoints = [100,100]
+                #oxygen = [100,100]
+                #speed = [0,1]
+
+                // [Current Turning, Max Turns Allowed]
+                // negative = # lefts, positive = # rights
+                #turning = [0, 1]
+                #location = [5,5]
                 
-                #location = [2,1]
-                #direction = [-1,0]
-                #velocity = [0,0]
+                // Possible directions [dx,dy] (left, clock-wise)
+                #directions = [ [-1,0], [-1,-1], [0,-1], [1,-1], [1,0], [1,1], [0,1], [-1,1]]
+                #direction = 0 // index into the directions list
 
-                throttle(forward = true){
-                    let speed = [...this.#direction]
-                    if( !forward ){
-                        speed[0] *= -1
-                        speed[1] *= -1
+                #vision = 1
+
+                move(){
+                    let numDirections = this.#directions.length
+                    this.#direction = (((this.#direction+this.#turning[0]) % numDirections) + numDirections) % numDirections                    
+
+                    let dirVector = this.#directions[this.#direction]
+                    for( let i = 0; i < this.#location.length; i++ ){
+                        this.#location[i] += this.#speed[0] * dirVector[i]
                     }
-                    this.#velocity[0] += speed[0]
-                    this.#velocity[1] += speed[1]
-
-                    for( let i = 0; i < this.#velocity.length; i++ ){
-                        if(this.#velocity[i] < -1){
-                            this.#velocity[i] = -1;
-                        }
-                        else if( this.#velocity[i] > 1 ){
-                            this.#velocity[i] = 1;
-                        }
-                    }
-
                 }
 
-                turn(left = true){
-                    if(this.#velocity[0] === 0 ){
-                        return;
-                    }
-
-                    let speed = 
-
+                get mode() {
+                    return this.#mode;
                 }
-
+                get hull(){
+                    return [...this.#hullPoints]
+                }
+                get oxygen() {
+                    return [...this.#oxygen]
+                }
+                get actionPoints() {
+                    return [...this.#actionPoints]
+                }
+                
+                get vision(){
+                    return this.#vision;
+                }
+                get speed(){
+                    return [...this.#speed]
+                }
+                get turns() {
+                    return [...this.#turning]
+                }
+                
                 get location() {
                     return [...this.#location]
                 }
+                get direction() {
+                    return [...this.#directions[this.#direction]]
+                }
+            
+                doActions( actions = [] ) {
+                    if(!actions) return
 
+                    let state = this.toJSON()
+                    for( let action of actions){
+                        state = action.perform(state);
+                        this.update(state);
+                        this.move()
+                        state = this.toJSON()
+                    }
+                }
+                update( newState ){
+                    for( let prop in newState){
+                        switch( prop ) {
+                            case 'mode':
+                                if(Submersible.MODES.has(newState['mode'])){
+                                    this.#mode = newState[prop]
+                                }
+                                break;
+                            case 'location':
+                                this.#location = [...newState['location']]
+                                break
+                            case 'direction':
+                                let dir = newState['direction']
+                                if( dir < 0 || dir >= this.#directions.length){
+                                    dir = (((newState['direction']) % numDirections) + numDirections) % numDirections
+                                }
+                                this.#direction = dir
+                                break;
+                            case 'turning':
+                                this.#turning[1] = newState['turning'][1]
+                                this.#turning[0] = Math.max(-1*this.#turning[1], Math.min(newState['turning'][0], this.#turning[1]))
+                                break;
+                            case 'speed':
+                                this.#speed = [...newState['speed']]
+                                break;
+                            case 'hull':
+                            case 'oxygen':
+                            case 'action':  
+                                if( newState[prop][0] < 0 ) {
+                                    newState[prop][0] = 0
+                                }
+                                if( newState[prop][0] > newState[prop][1] ){
+                                    newState[prop][0] = newState[prop][1];
+                                }
+
+                                let modProp = this.#hullPoints;
+                                if( prop === 'oxygen'){
+                                    modProp = this.#oxygen
+                                }
+                                else if( prop === 'speed' ) {
+                                    modProp = this.#speed
+                                }
+                                else if( prop === 'action' ){
+                                    modProp = this.#actionPoints
+                                }
+                                modProp[0] = newState[prop][0]
+                                modProp[1] = newState[prop][1]
+                                break;
+                            
+                            case 'vision':
+                                this.#vision = newState['vision']
+                                break;
+                                
+                        }
+                    }
+                }
+                toJSON() {
+                    let state = {
+                        'mode': this.#mode, 
+                        'location' : [...this.#location],
+                        'direction' : this.#direction,
+                        'hull': [...this.#hullPoints],
+                        'oxygen': [...this.#oxygen],
+                        'speed' : [...this.#speed],
+                        'turning':[...this.#turning],
+                        'action': [...this.#actionPoints],
+                        'vision': this.#vision,
+
+                    }
+                    return state;
+                }
+            }
+
+            class Action {
+                #name = "Empty"
+                #cost = 0
+                #iconHTML = ""
+
+                constructor(name = null, cost = 0, iconHTML = ''){
+                    if( !name ){
+                        name = "Empty"
+                    }
+                    if( !cost ){
+                        cost = 0
+                    }
+                    if( !iconHTML ){
+                        iconHTML = ''
+                    }
+
+                    this.#name = name;
+                    this.#cost = cost;
+                    this.#iconHTML = iconHTML
+                }
+                perform( state ){
+                    if('action' in state){
+                        state['action'][0] -= this.#cost;
+                    }
+                    return state;
+                }
+                get name() {
+                    return this.#name;
+                }
+                get cost() {
+                    return this.#cost;
+                }
+                get icon() {
+                    return this.#iconHTML;
+                }
+            }
+            class Turn extends Action {
+                #clockwise = true;
+                constructor(clockwise = true)
+                {
+                    let icon = (clockwise) ? '&#8631;' : '&#8630;';
+                    super('Turn', 1, icon);
+                    this.#clockwise = clockwise
+                }
+
+                perform(state){
+                    state = super.perform(state)
+                    if( 'turning' in state){
+                        let delta = (this.#clockwise) ? 1 : -1;
+                        state['turning'][0] += delta
+                    }
+                    return state
+                }
+            }
+            class Throttle extends Action {
+                #forward = true
+                constructor( forward = true ){
+                    let icon = (forward) ? '&#8613;' : '&#8615;';
+                    super("Throttle", 1, icon)
+                    this.#forward = forward;
+                }
+                perform( state ) {
+                    state = super.perform(state)
+                    if( 'speed' in state ){
+                        let curr = state['speed'][0]
+                        let max = state['speed'][1]
+                        
+                        let delta = (this.#forward) ? 1 : -1;
+                        curr += delta
+
+                        // Clamp the speed
+                        state['speed'][0] = Math.max(-1*max, Math.min(curr, max))
+                        return state;
+                    }
+                }
             }
 
             let player = new Submersible();
+            let shadowPlayer = new Submersible();
+
+            let roundActions = []
+            let keymap = new Map()
+            keymap.set('w', new Throttle(true))
+            keymap.set('s', new Throttle(false))
+            keymap.set('a', new Turn(false))
+            keymap.set('d', new Turn(true))
 
             // Graphical Elements
             let playerSVG = null;
+            let shadowPlayerSVG = null;
+            let baseStats = null;
             let worldMap = null;
+            let actionBar = null;
 
             function zoomMap(numRows = 10, numCols = 10, upperLeftCoord = [0,0]){
                 let container = document.querySelector('section.mapContainer');
@@ -502,38 +752,147 @@
                 container.replaceChildren(worldMap);
             }
 
-            function drawPlayer(player){
+            function drawPlayer(player, shadow = true){
 
                 let [col, row] = player.location;
                 let space = worldMap.querySelector(`[data-col='${col}'][data-row='${row}']`)
 
-                if(playerSVG.parentNode){
-                    playerSVG.parentNode.removeChild(playerSVG);
-                }
-                space.appendChild(playerSVG)
+                let svg = (shadow) ? shadowPlayerSVG : playerSVG;
 
-                //playerSVG.querySelector("use").setAttribute("href","#under-right")
-                playerSVG.style.display = 'inline-block';
+                if(svg.parentNode){
+                    svg.parentNode.removeChild(svg);
+                }
+                space.appendChild(svg)
+
+                let dir = player.direction
+                let iconString = '#water'
+                let vertical = ''
+                let horizontal = ''
+                if( dir[0] < 0 ){
+                    horizontal = '-left'
+                }
+                else if(dir[0] > 0 ){
+                    horizontal = '-right'
+                }
+                if( dir[1] < 0 ){
+                    vertical = '-up'
+                }
+                else if(dir[1] > 0 ){
+                    vertical = '-down'
+                }
+                
+                svg.querySelector("use").setAttribute("href",iconString+vertical+horizontal)
+                svg.style.display = 'inline-block';
+                if( roundActions.length === 0 && shadow){
+                    svg.style.display = 'none';
+                }
+            }
+
+            function updateBase(player){
+                // Hightlight correct portion of the wheel
+                let currentlyOn = baseStats.querySelectorAll('.on')
+                for( let c of currentlyOn ){
+                    c.classList.remove('on')
+                }
+
+                let turnOnClass = '.wheel-slice'
+                let currentSpeed = player.speed[0];
+                if( currentSpeed !== 0 ){
+                    if( currentSpeed > 0 ){
+                    turnOnClass += '.forward'
+                    }
+                    else if( currentSpeed < 0 ){
+                        turnOnClass += '.reverse'
+                    }
+                    baseStats.querySelector(turnOnClass).classList.add('on')
+                }
+                
+                turnOnClass = '.wheel-slice'
+                let turning = player.turns[0];
+                if( turning !== 0 ){
+                    if( turning < 0 ){
+                        turnOnClass += '.left'
+                    }
+                    else if( turning > 0 ){
+                        turnOnClass += '.right'
+                    }
+                    baseStats.querySelector(turnOnClass).classList.add('on')
+                }
+                
+                // Update Hull and Oxygen
+                let hull = baseStats.querySelector('.hull-points')
+                let oxygen = baseStats.querySelector('.oxygen')
+
+                hull.textContent = player.hull[0]
+                oxygen.textContent = player.oxygen[0]
+                hull.style.setProperty('--hull-level', (player.hull[0]/player.hull[1]*100)+'%')
+                oxygen.style.setProperty('--oxygen-level', (player.oxygen[0]/player.oxygen[1]*100)+'%')
+
+                // Update Action Points
+                let center = baseStats.querySelector('.wheel-slice.center')
+                center.textContent = player.actionPoints[0]
+            }
+            function updateRoundActions(actions){
+                let actionDiv = document.createElement('div')
+                actionDiv.classList.add('currentActions')
+
+                let btnID = 0;
+                for( let action of actions ){
+                    let btn = document.createElement('button')
+                    btn.classList.add('actionItem')
+                    btn.setAttribute('data-actionid', btnID)
+
+                    let iconDiv = document.createElement('div');
+                    iconDiv.style.pointerEvents = 'none';
+                    iconDiv.innerHTML = action.icon
+                    if( iconDiv.innerHTML.length === 0 ){
+                        iconDiv.textContent = action.name
+                    }
+                    btn.addEventListener('mouseup', function(event){
+                        let id = event.target.getAttribute('data-actionid')
+                        roundActions.splice(id,1)
+
+                        shadowPlayer.update(player.toJSON())
+                        updateUI(shadowPlayer, roundActions)
+                    })
+
+                    btn.appendChild(iconDiv)
+                    actionDiv.prepend(btn)
+                    btnID++;
+                }
+
+                actionBar.replaceChildren(actionDiv)
+                
+            }
+            function updateUI(player, actions){
+                player.doActions(actions);
+                drawPlayer(player, true)
+                updateBase(player)
+                updateRoundActions(actions) 
             }
 
             function init(){
+                baseStats = document.querySelector('section.base-stats')
+                actionBar = document.querySelector('section.actionbar > div.roundActions')
                 playerSVG = document.querySelector("svg#player")
+                shadowPlayerSVG = playerSVG.cloneNode(true);
+                shadowPlayerSVG.classList.add('shadow')
                 zoomMap(10, 10);
-                drawPlayer(player)
 
+                updateBase(player)
+                drawPlayer(player, false)
 
+                // Key-bindings
                 document.addEventListener('keyup', function(event){
-                    console.log(event.which)
-
-
-                    // W
-                    if( event.which === 87 ){
-                        player.throttle()
+                    shadowPlayer.update(player.toJSON())
+                    if( keymap.has(event.key)){
+                        roundActions.push(keymap.get(event.key))
                     }
-                    // D
-                    else if( event.which == 83 ){
-                        player.thottle(false)
+
+                    if( roundActions.length > 0 ){
+                       updateUI(shadowPlayer, roundActions)
                     }
+                    
                 })
             }
 
