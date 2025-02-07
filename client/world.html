@@ -1,5 +1,6 @@
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <style type="text/css">
             * {
@@ -9,7 +10,7 @@
             }
 
             body.mainBody {
-                max-width: 100vw;
+                width: 100vw;
                 height: 100vh;
 
                 display: flex;
@@ -42,9 +43,7 @@
 
             footer {
                 display: flex;
-
-                min-height: 10vh;
-                padding: 0.5rem;
+                min-height: 14ex;
             }
             section.base-stats {
                 position: relative;
@@ -52,8 +51,9 @@
                 height: 100%;
 
                 width: max-content;
-                padding: 0.25rem;
+                padding: 1rem;
                 padding-bottom: 0;
+                margin-right: 0.5rem;
 
             }
             div.wheel{
@@ -63,8 +63,8 @@
                 grid-template-columns: 1fr 1fr 1fr;
 
                 
-                height: 100%;
-                aspect-ratio: 2;
+                min-height: 100%;
+                aspect-ratio: 3;
 
                 border: 2px solid black;
                 border-start-end-radius: 200px;
@@ -116,7 +116,7 @@
                 justify-content: start;
             }
             div.wheel-slice.right > .hotkey {
-                right: 40%;
+                right: 50%;
             }
             div.wheel-slice.center {
                 position: absolute;
@@ -154,12 +154,13 @@
                 --hull-container-color: rgb(183, 123, 123);
 
                 position: absolute;
-                top: 0;
-                left:0; 
+                top: 0px;
+                left: 0px; 
 
                 height: 100%;
                 width: 50%;
-                padding-left: 0.25rem;
+                padding-top: 0.25rem;
+                padding-left: 0.5rem;
                 border-top-left-radius: 10px;
 
                 font-size: 1.5rem;
@@ -184,7 +185,8 @@
 
                 width: 50%;
                 height: 100%;
-                padding-right: 0.25rem;
+                padding-top: 0.25rem;
+                padding-right: 0.5rem;
                 border-top-right-radius: 10px;
 
                 background: linear-gradient(to top, var(--oxygen-color) var(--oxygen-level), var(--oxygen-container-color) var(--oxygen-level) 100%);
@@ -215,6 +217,12 @@
 
                 min-height: 2rem;
             }
+            button#endTurn{
+                width: min-content;
+                height: 100%;
+                padding: 1rem;
+            }
+
             /*  Player Theme */
             svg#player {
                 width: 80%;
@@ -259,7 +267,7 @@
                 <div class="actions"></div>
             </section>
             <div>
-                Submit
+                <button id="endTurn">Submit Actions</button>
             </div>
         </footer>
 
@@ -483,9 +491,102 @@
 
         <script type="text/javascript">
     
-            class Submersible {
-                
-                // Submersible modes
+            class Game {
+                #board = []
+                #player = null
+
+                constructor(rows = 10, cols = 10, player = null, options = {}){
+                    for(let r = 0; r < rows; r++ ){
+                        let row = []
+                        for(let c = 0; c < cols; c++ ){
+                            row.push(null)
+                        }
+                        this.#board.push(row)
+                    }
+                    this.#populateBoard();
+                    console.log( this.#board )
+
+                    // Place the player
+                    if( player == null ){
+                        player = new Mob();
+                    }
+                    this.#player = player;
+
+                    let placed = false;
+                    while(!placed){
+                        let row = Math.floor(Math.random()*rows);
+                        let col = Math.floor(Math.random()*cols);
+
+                        if( this.#board[row][col] === null ){
+                            this.#player.update({
+                                'location': [row, col]
+                            })
+                            console.log( this.#board[row][col])
+                            placed = true;
+                        }
+                    }
+                }
+
+                get possibleEnemies(){
+                    // [percentChance, object]
+                    return [
+                        [50, new Mine({'count':2})],     
+                        [30, new Treasure({'value': 50})],
+                        [10, new Mine({'count':4})], 
+                        [2, new Mine({'count':5})]
+                    ]
+                }
+
+
+                #populateBoard(){
+                    let percentChance = this.possibleEnemies;
+                    
+                    for( let row of this.#board ){
+                        for( let c = 0; c < row.length; c++ ){
+                            let placement = null
+                            for(let attempt of percentChance ){
+                                let chance = Math.floor(Math.random()*100)
+                                if( chance > attempt[0] ){
+                                    break
+                                    
+                                }
+                                placement = attempt[1]
+                            }
+
+                            if( placement ){
+                                row[c] = placement.dup();
+                            }
+                        }
+                    }
+                }
+
+                playerTurn( actions ){
+                    for( let action of actions ){
+                        player.doActions([action]);
+
+                        let [row, col] = player.location
+                        if( this.#board[row][col] instanceof Mine ){
+                            console.log("BOOM")
+                            this.player.hit(this.#board[row][col].damage)
+                        }
+                    }
+
+                    let actionPoints = player.actionPoints
+                    player.update({
+                        'action': [ actionPoints[1], actionPoints[1] ]
+                    });
+                }
+
+                get player() {
+                    return this.#player
+                }
+
+
+            }
+
+
+            class Mob {
+                // Visibility modes
                 static get MODES() { 
                     return new Map([ [0, 'water'], [1, 'submerged'], [2, 'land']])
                 }
@@ -493,11 +594,11 @@
                 static get SUBMERGED() { return 1; }
                 static get LAND() { return 2; }
 
-                #mode = Submersible.WATER; 
+                #mode = Mob.WATER; 
 
                 // [Current, Max]
                 #actionPoints = [2,2]
-                #hullPoints = [100,100]
+                #hullPoints = [10,10]
                 #oxygen = [100,100]
                 #speed = [0,1]
 
@@ -511,6 +612,13 @@
                 #direction = 0 // index into the directions list
 
                 #vision = 1
+                #damage = 10
+
+                constructor( initialOptions = {} ){
+                    if( initialOptions ){
+                        this.update(initialOptions);
+                    }
+                }
 
                 move(){
                     let numDirections = this.#directions.length
@@ -520,6 +628,21 @@
                     for( let i = 0; i < this.#location.length; i++ ){
                         this.#location[i] += this.#speed[0] * dirVector[i]
                     }
+                }
+                hit(damage){
+                    let hp = this.#hullPoints[0] - damage
+                    if( hp < 0 ){
+                        hp = 0;
+                    }
+                    if( hp > this.#hullPoints[1] ){
+                        hp = this.#hullPoints[1];
+                    }
+                    this.#hullPoints[0] = hp;
+                }
+
+
+                get damage() {
+                    return this.#damage;
                 }
 
                 get mode() {
@@ -557,6 +680,10 @@
 
                     let state = this.toJSON()
                     for( let action of actions){
+                        if( action.cost > this.actionPoints[0]){
+                            break
+                        }
+
                         state = action.perform(state);
                         this.update(state);
                         this.move()
@@ -566,8 +693,11 @@
                 update( newState ){
                     for( let prop in newState){
                         switch( prop ) {
+                            case 'damage':
+                                this.#damage = newState['damage']
+                                break;
                             case 'mode':
-                                if(Submersible.MODES.has(newState['mode'])){
+                                if(Mob.MODES.has(newState['mode'])){
                                     this.#mode = newState[prop]
                                 }
                                 break;
@@ -630,12 +760,98 @@
                         'turning':[...this.#turning],
                         'action': [...this.#actionPoints],
                         'vision': this.#vision,
+                        'damage': this.#damage
 
                     }
                     return state;
                 }
+
+                dup() {
+                    return new Mob( this.toJSON() );
+                }
             }
 
+            class Mine extends Mob {
+                #count = 1
+                
+                constructor( initialOptions = {} ) {
+                    super({
+                        'mode':'submerged', 
+                        'damage': 5,
+                        'hull': [1,1],
+                        'oxygen': [Infinity, Infinity]
+                    });
+
+                    if( 'count' in initialOptions ){
+                        this.#count = initialOptions['count'];
+                    }
+                }
+
+                get count() {
+                    return this.#count
+                }
+
+                update(state) {
+                    super.update(state)
+
+                    if( 'count' in state ){
+                        this.#count = parseInt(start['count'])
+                    }
+                }
+
+                toJSON() {
+                    let rtn = super.toJSON()
+                    rtn['count'] = this.count;
+                    return rtn
+                }
+
+                dup() {
+                    return new Mine(this.toJSON())
+                }
+
+            }
+
+            class Treasure extends Mob {
+                #value = 100
+
+                constructor(initialOptions = {} ){
+                    super({
+                        'mode':'submerged', 
+                        'damage': 0,
+                        'hull': [Infinity,Infinity],
+                        'oxygen': [Infinity, Infinity]
+                    });
+
+                    if( 'value' in initialOptions ){
+                        this.#value = initialOptions['value'];
+                    }
+                }
+
+                get value() {
+                    return this.#value
+                }
+
+                update( state ) {
+                    super.update(state)
+
+                    if( 'value' in state ){
+                        this.#value = parseInt(start['value'])
+                    }
+                }
+
+                toJSON() {
+                    let rtn = super.toJSON()
+                    rtn['value'] = this.value;
+                    return rtn
+                }
+
+                dup() {
+                    return new Treasure(this.toJSON());
+                }
+
+            }
+
+            /***** Actions *****/
             class Action {
                 #name = "Empty"
                 #cost = 0
@@ -713,8 +929,10 @@
                 }
             }
 
-            let player = new Submersible();
-            let shadowPlayer = new Submersible();
+            
+            let game = new Game(10,10)
+            let player = game.player;
+            let shadowPlayer = player.dup();
 
             let roundActions = []
             let keymap = new Map()
@@ -861,9 +1079,9 @@
                     btnID++;
                 }
 
-                actionBar.replaceChildren(actionDiv)
-                
+                actionBar.replaceChildren(actionDiv) 
             }
+
             function updateUI(player, actions){
                 player.doActions(actions);
                 drawPlayer(player, true)
@@ -884,6 +1102,11 @@
 
                 // Key-bindings
                 document.addEventListener('keyup', function(event){
+                    
+                    if( shadowPlayer.actionPoints[0] == 0 ){
+                        return;
+                    }
+
                     shadowPlayer.update(player.toJSON())
                     if( keymap.has(event.key)){
                         roundActions.push(keymap.get(event.key))
@@ -893,6 +1116,17 @@
                        updateUI(shadowPlayer, roundActions)
                     }
                     
+                })
+
+                // Submit Action button
+                let btn = document.querySelector('button#endTurn')
+                btn.addEventListener('click', function(event) {
+                    game.playerTurn(roundActions)
+                    roundActions = [];
+                    updateUI(game.player, roundActions)
+                    drawPlayer(game.player, false)
+                    shadowPlayer.update(game.player.toJSON())
+
                 })
             }
 
