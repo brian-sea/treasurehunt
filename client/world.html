@@ -281,16 +281,16 @@
                     100
                 </div>
                 <div class="wheel">
-                    <div class="wheel-slice left"><div class="hotkey">A</div>&#8630;</div>
-                    <div class="wheel-slice forward">
-                        <div>&#8613;</div><div class='hotkey'>W</div>
+                    <div id='turnLeft' class="wheel-slice left"><div class="hotkey">A</div><div class="icon">&#8630;</div></div>
+                    <div id='throttleForward' class="wheel-slice forward">
+                        <div class="icon">&#8613;</div><div class='hotkey'>W</div>
                     </div>
-                    <div class="wheel-slice right">&#8631;<div class="hotkey">D</div></div>
-                    <div class="wheel-slice"><div class='hotkey'>X</div> &#x233E;</div>
-                    <div class="wheel-slice reverse">
-                        <div>&#8615;</div><div class='hotkey'>S</div>
+                    <div id='turnRight' class="wheel-slice right"><div class="icon">&#8631;</div><div class="hotkey">D</div></div>
+                    <div id='explore' class="wheel-slice"><div class='hotkey'>X</div> <div class="icon">&#x233E;</div></div>
+                    <div id='throttleRev' class="wheel-slice reverse">
+                        <div class="icon">&#8615;</div><div class='hotkey'>S</div>
                     </div>
-                    <div class="wheel-slice"><div class='hotkey'>Z</div></div>
+                    <div id='submerge' class="wheel-slice"><div class="icon">&#x1F704;</div><div class='hotkey'>Z</div></div>
                     <div class="wheel-slice center">
                     </div>
                 </div>
@@ -898,9 +898,10 @@
                 #name = "Empty"
                 #cost = 0
                 #iconHTML = ""
+                #graphicalElement = null
                 #location = []
 
-                constructor(name = null, cost = 0, iconHTML = ''){
+                constructor(name = null, cost = 0, iconHTML = '', graphicalElement = null){
                     if( !name ){
                         name = "Empty"
                     }
@@ -914,6 +915,10 @@
                     this.#name = name;
                     this.#cost = cost;
                     this.#iconHTML = iconHTML
+                    this.#graphicalElement = graphicalElement;
+
+                    this.graphicalElement = graphicalElement
+
                 }
                 perform( state ){
                     if('action' in state){
@@ -936,6 +941,17 @@
                 }
                 get location(){
                     return [...this.#location]
+                }
+                
+                set graphicalElement(element){
+                    if( element ){
+                        this.#graphicalElement = element; 
+                        let icon = this.#graphicalElement.querySelector('.icon');
+                        icon.innerHTML = this.icon;
+                    }
+                }
+                get graphicalElement() {
+                    return this.#graphicalElement;
                 }
 
                 cancel() {
@@ -968,10 +984,10 @@
             }
             class Turn extends Action {
                 #clockwise = true;
-                constructor(clockwise = true)
+                constructor(clockwise = true, graphicalElement = null)
                 {
                     let icon = (clockwise) ? '&#8631;' : '&#8630;';
-                    super('Turn', 1, icon);
+                    super('Turn', 1, icon, graphicalElement);
                     this.#clockwise = clockwise
                 }
 
@@ -1003,9 +1019,9 @@
             }
             class Throttle extends Action {
                 #forward = true
-                constructor( forward = true ){
+                constructor( forward = true, graphicalElement = null ){
                     let icon = (forward) ? '&#8613;' : '&#8615;';
-                    super("Throttle", 1, icon)
+                    super("Throttle", 1, icon, graphicalElement)
                     this.#forward = forward;
                 }
                 perform( state ) {
@@ -1041,8 +1057,8 @@
             }
             class Explore extends Action {
                 #game = null;
-                constructor(gameObj){
-                    super("Explore", 2, "&#x233E;");
+                constructor(gameObj, graphicalElement = null){
+                    super("Explore", 1, "&#x233E;", graphicalElement);
                     this.#game = gameObj
                 }
                 perform( state ){
@@ -1081,6 +1097,64 @@
                     return rtn;
                 }
             }
+            class Submerge extends Action {
+                
+                #mode = Mob.Water;
+
+                constructor(graphicalElement = null){
+                    super("Submerge", 1, "&#x25B2;");
+                    this.#mode = Mob.WATER;
+                    this.graphicalElement = graphicalElement
+                }
+
+                get icon() {
+                    let rtn = "&#x25BC;";
+                    if(this.#mode === Mob.SUBMERGED){
+                        rtn = "&#x25B2;"
+                    }
+                    return rtn;
+                }
+
+                perform( state ){
+                    state = super.perform(state)
+                    
+                    if( 'mode' in state ){
+                        let m = state['mode']
+                      
+                        this.#mode = m;
+                        if( m === Mob.WATER){
+                            m = Mob.SUBMERGED;
+                        }
+                        else {
+                            m = Mob.WATER;
+                        }
+                        state['mode'] = m;
+                    }
+                    // update icon
+                    this.graphicalElement = this.graphicalElement
+
+                    return state
+                }
+
+                toJSON(){
+                    let state = super.toJSON();
+                    state['mode'] = this.#mode;
+                    return state;
+                }
+                update(newState){
+                    super.update(newState);
+                    if( 'mode' in newState){
+                        this.#mode = newState['mode']
+                    }
+                    this.graphicalElement = this.graphicalElement
+                }
+
+                dup() {
+                    let rtn = new Submerge();
+                    rtn.update(this.toJSON());
+                    return rtn;
+                }
+            }
 
             
             let game = new Game(10,10)
@@ -1089,11 +1163,6 @@
 
             let roundActions = []
             let keymap = new Map()
-            keymap.set('w', new Throttle(true))
-            keymap.set('s', new Throttle(false))
-            keymap.set('a', new Turn(false))
-            keymap.set('d', new Turn(true))
-            keymap.set('x', new Explore(game));
 
             // Graphical Elements
             let playerSVG = null;
@@ -1105,7 +1174,6 @@
             function triggerAnimation(name, row, col, start = false){
                 let space = worldMap.querySelector(`.space[data-row="${row}"][data-col="${col}"]`)
                 
-                console.log(row, col)
                 if( space ){
                     let animation = space.querySelector(`.animation.${name}`)
                 
@@ -1159,7 +1227,7 @@
                 let dir = player.direction
                 let iconString = '#water'
                 if( player.mode === Mob.SUBMERGED){
-                    iconString = "#submerged"
+                    iconString = "#under"
                 }
                 
                 
@@ -1228,6 +1296,16 @@
                 // Update Action Points
                 let center = baseStats.querySelector('.wheel-slice.center')
                 center.textContent = player.actionPoints[0]
+
+                // Allow actions to update their icons
+                let playerState = player.toJSON()
+                for( let [key,action] of keymap ){
+                    if( action.graphicalElement ){
+                        action.update(playerState)
+                        let icon = action.graphicalElement.querySelector('.icon');
+                        icon.innerHTML = action.icon
+                    }
+                }
             }
             function updateRoundActions(actions){
                 let actionDiv = document.createElement('div')
@@ -1291,6 +1369,7 @@
                         return
                     }
 
+
                     roundActions.push(keymap.get(event.key).dup())
                     shadowPlayer.update(player.toJSON())
                     updateUI(shadowPlayer, roundActions)
@@ -1301,11 +1380,19 @@
                 btn.addEventListener('click', function(event) {
                     game.playerTurn(roundActions)
                     roundActions = [];
+
                     updateUI(game.player, roundActions)
                     drawPlayer(game.player, false)
                     shadowPlayer.update(game.player.toJSON())
-
                 })
+
+                // Setup Default KeyMap
+                keymap.set('w', new Throttle(true, document.getElementById('throttleForward')))
+                keymap.set('s', new Throttle(false, document.getElementById('throttleRev')))
+                keymap.set('a', new Turn(false, document.getElementById('turnLeft')))
+                keymap.set('d', new Turn(true, document.getElementById('turnRight')))
+                keymap.set('x', new Explore(game, document.getElementById('explore')));
+                keymap.set('z', new Submerge(document.getElementById('submerge')));
             }
 
             window.onload = init;
